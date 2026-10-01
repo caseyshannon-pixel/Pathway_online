@@ -11,8 +11,8 @@ export type Session = {
 };
 
 export const SESSIONS: Session[] = [
-  { number: 1, title: "Session 1", youtubeId: "" },
-  { number: 2, title: "Session 2", youtubeId: "" },
+  { number: 1, title: "Session 1", youtubeId: "r7HR7Xsro8M&feature=youtu.be" },
+  { number: 2, title: "Session 2", youtubeId: "RuX2hoWhMSw" },
   { number: 3, title: "Session 3", youtubeId: "" },
   { number: 4, title: "Session 4", youtubeId: "" },
   { number: 5, title: "Session 5", youtubeId: "" },
