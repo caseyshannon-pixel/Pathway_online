@@ -1,41 +1,76 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import { SESSIONS } from "@/lib/course";
+import { getProgress, type Progress } from "@/lib/pcoWorkflow";
+import TopBar from "@/components/TopBar";
 
-// Placeholder chapters. Replace with your real Pathway chapters and videos.
-const CHAPTERS = [
-  "Chapter 1",
-  "Chapter 2",
-  "Chapter 3",
-  "Chapter 4",
-];
+export const dynamic = "force-dynamic";
 
 export default async function Course() {
   const session = await getSession();
   if (!session) redirect("/");
 
+  let progress: Progress | null = null;
+  try {
+    progress = await getProgress(session.personId);
+  } catch (err) {
+    console.error("Could not load progress:", err);
+  }
+
+  const completed = progress?.completed ?? 0;
+  const finished = progress !== null && completed >= SESSIONS.length;
+
   return (
     <>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <span className="brand">Pathway Online</span>
-          <form action="/api/auth/logout" method="post">
-            <button className="link-btn" type="submit">Sign out</button>
-          </form>
-        </div>
-      </header>
+      <TopBar />
       <main className="page">
         <div className="card">
           <h1>Welcome, {session.firstName}</h1>
-          <p className="muted">
-            You're signed in. Your course chapters will appear here.
-          </p>
+          {progress === null ? (
+            <p className="notice" role="alert">
+              We couldn't load your progress right now. Please refresh in a minute.
+            </p>
+          ) : finished ? (
+            <p className="muted">You've finished Pathway. You can rewatch any session below.</p>
+          ) : (
+            <p className="muted">
+              {completed === 0
+                ? "Start with Session 1 whenever you're ready."
+                : `You've finished ${completed} of ${SESSIONS.length} sessions.`}
+            </p>
+          )}
+
           <ol className="chapters">
-            {CHAPTERS.map((title, i) => (
-              <li className="chapter" key={title}>
-                <span className="chapter-num">{i + 1}</span>
-                <span className="chapter-title">{title}</span>
-              </li>
-            ))}
+            {SESSIONS.map((s) => {
+              const isDone = s.number <= completed;
+              const isNext = progress !== null && s.number === completed + 1;
+              const open = progress !== null && s.number <= completed + 1;
+              const status = isDone ? "Completed" : isNext ? "Up next" : "Locked";
+              const inner = (
+                <>
+                  <span className={`chapter-num${isDone ? " is-done" : ""}`}>
+                    {isDone ? "✓" : s.number}
+                  </span>
+                  <span className="chapter-title">{s.title}</span>
+                  <span className={`status status-${isDone ? "done" : isNext ? "next" : "locked"}`}>
+                    {status}
+                  </span>
+                </>
+              );
+              return (
+                <li key={s.number}>
+                  {open ? (
+                    <a className="chapter chapter-link" href={`/course/${s.number}`}>
+                      {inner}
+                    </a>
+                  ) : (
+                    <div className="chapter chapter-locked" aria-disabled="true">
+                      {inner}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ol>
         </div>
       </main>
