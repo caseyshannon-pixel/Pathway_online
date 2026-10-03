@@ -40,6 +40,25 @@ export default async function Course() {
             </p>
           )}
 
+          {progress !== null && (
+            <div
+              className="progress"
+              role="progressbar"
+              aria-label="Pathway progress"
+              aria-valuemin={0}
+              aria-valuemax={SESSIONS.length}
+              aria-valuenow={Math.min(completed, SESSIONS.length)}
+              aria-valuetext={`${Math.min(completed, SESSIONS.length)} of ${SESSIONS.length} sessions completed`}
+            >
+              {SESSIONS.map((s) => (
+                <div key={s.number} className="progress-segment">
+                  <span className={`progress-fill${s.number <= completed ? " is-done" : ""}`} />
+                  <span className="progress-label" aria-hidden="true">{s.number}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <ol className="chapters">
             {SESSIONS.map((s) => {
               const isDone = s.number <= completed;
