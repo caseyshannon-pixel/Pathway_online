@@ -281,7 +281,7 @@ h1, h2 {
 .editor-hint { font-size: 0.9rem; margin: 4px 0 0; }
 .editor-footer { display: flex; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
 .btn-dark {
-  background: var(--accent-strong);
+  background: #2266f7; /* Planning Center blue */
   font-family: var(--font-archivo-black), var(--font-archivo), sans-serif;
   font-weight: 400;
 }
