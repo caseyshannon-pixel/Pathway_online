@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { SESSIONS } from "@/lib/course";
+import { getSessions } from "@/lib/content";
 import { getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
 
@@ -10,6 +10,8 @@ export default async function Course() {
   const session = await getSession();
   if (!session) redirect("/");
 
+  const sessions = await getSessions();
+
   let progress: Progress | null = null;
   try {
     progress = await getProgress(session.personId);
@@ -18,7 +20,7 @@ export default async function Course() {
   }
 
   const completed = progress?.completed ?? 0;
-  const finished = progress !== null && completed >= SESSIONS.length;
+  const finished = progress !== null && completed >= sessions.length;
 
   return (
     <>
@@ -36,7 +38,7 @@ export default async function Course() {
             <p className="muted">
               {completed === 0
                 ? "Start with Session 1 whenever you're ready."
-                : `You've finished ${completed} of ${SESSIONS.length} sessions.`}
+                : `You've finished ${completed} of ${sessions.length} sessions.`}
             </p>
           )}
 
@@ -46,11 +48,11 @@ export default async function Course() {
               role="progressbar"
               aria-label="Pathway progress"
               aria-valuemin={0}
-              aria-valuemax={SESSIONS.length}
-              aria-valuenow={Math.min(completed, SESSIONS.length)}
-              aria-valuetext={`${Math.min(completed, SESSIONS.length)} of ${SESSIONS.length} sessions completed`}
+              aria-valuemax={sessions.length}
+              aria-valuenow={Math.min(completed, sessions.length)}
+              aria-valuetext={`${Math.min(completed, sessions.length)} of ${sessions.length} sessions completed`}
             >
-              {SESSIONS.map((s) => (
+              {sessions.map((s) => (
                 <div key={s.number} className="progress-segment">
                   <span className={`progress-fill${s.number <= completed ? " is-done" : ""}`} />
                   <span className="progress-label" aria-hidden="true">{s.number}</span>
@@ -60,7 +62,7 @@ export default async function Course() {
           )}
 
           <ol className="chapters">
-            {SESSIONS.map((s) => {
+            {sessions.map((s) => {
               const isDone = s.number <= completed;
               const isNext = progress !== null && s.number === completed + 1;
               const open = progress !== null && s.number <= completed + 1;

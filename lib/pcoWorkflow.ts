@@ -5,12 +5,12 @@
 // session (in order), then a final "Completed" step. A person's current step
 // tells us how many sessions they have finished.
 
-import { SESSIONS } from "./course";
+import { getSessions } from "./content";
 
 const API = process.env.PCO_API_BASE ?? "https://api.planningcenteronline.com/people/v2";
 
 export type Progress = {
-  /** Number of sessions finished (0 to SESSIONS.length). */
+  /** Number of sessions finished (0 to the number of sessions). */
   completed: number;
   total: number;
   cardId: string;
@@ -105,13 +105,17 @@ export async function getProgress(
   opts: { create: false },
 ): Promise<Omit<Progress, "cardId"> & { cardId: string | null }>;
 export async function getProgress(personId: string, opts: { create?: boolean } = {}) {
-  const [stepIds, existing] = await Promise.all([getStepIds(), findCard(personId)]);
+  const [stepIds, existing, sessions] = await Promise.all([
+    getStepIds(),
+    findCard(personId),
+    getSessions(),
+  ]);
+  const total = sessions.length;
   if (!existing && opts.create === false) {
-    return { completed: 0, total: SESSIONS.length, cardId: null };
+    return { completed: 0, total, cardId: null };
   }
   const card = existing ?? (await createCard(personId));
 
-  const total = SESSIONS.length;
   const currentStepId = card.relationships?.current_step?.data?.id;
   const index = currentStepId ? stepIds.indexOf(currentStepId) : 0;
   const completed = card.attributes.completed_at ? total : Math.min(Math.max(index, 0), total);

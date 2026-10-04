@@ -241,3 +241,49 @@ h1, h2 {
   color: #067647;
   border-radius: 12px;
 }
+
+/* Session page extras */
+.prose p { margin: 0 0 12px; white-space: pre-line; }
+.session-intro { margin-bottom: 20px; }
+.session-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+.session-links { margin: 8px 0 0; padding-left: 20px; }
+.session-links a { color: var(--accent-strong); }
+.form-frame { width: 100%; height: 900px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.form-fallback { font-size: 0.9rem; margin: 10px 0 0; }
+.form-fallback a { color: var(--accent-strong); }
+
+/* Admin content editor */
+.editor { display: grid; gap: 12px; margin-top: 20px; }
+.editor-session { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.editor-session summary {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; list-style: none;
+}
+.editor-session summary::-webkit-details-marker { display: none; }
+.editor-num {
+  flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 12%, white); color: var(--accent-strong); font-weight: 700; font-size: 0.9rem;
+}
+.editor-summary-title { flex: 1; font-weight: 600; }
+.editor-body { display: grid; gap: 16px; padding: 4px 16px 18px; }
+.field { display: grid; gap: 6px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.field > span, .field > legend { font-weight: 600; font-size: 0.95rem; padding: 0; }
+.field input, .field textarea {
+  font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--text); width: 100%;
+}
+.field input:focus-visible, .field textarea:focus-visible, .admin-search input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px;
+}
+.link-row { display: grid; grid-template-columns: 1fr 1.6fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+.editor-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+.link-btn:disabled { opacity: 0.4; cursor: default; }
+.link-btn.danger { color: #b42318; margin-left: auto; }
+.editor-hint { font-size: 0.9rem; margin: 4px 0 0; }
+.editor-footer { display: flex; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+.btn-secondary { background: none; color: var(--accent-strong); border: 2px solid var(--accent); padding: 10px 22px; }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.saved {
+  background: #ecfdf3; border: 1px solid #abefc6; color: #067647; border-radius: 10px;
+  padding: 10px 14px; margin: 0; font-size: 0.95rem;
+}
+@media (max-width: 560px) { .link-row { grid-template-columns: 1fr; } }

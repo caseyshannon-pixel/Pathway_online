@@ -42,6 +42,10 @@ export default async function Admin({
       <main className="page">
         <div className="card">
           <h1>Admin</h1>
+          <p className="muted">
+            <a href="/admin/content">Edit session content &rarr;</a>
+          </p>
+          <h2>Move someone forward</h2>
           <p className="muted">Find a person and move them to their next session.</p>
 
           {(error || failed) && (
