@@ -5,12 +5,12 @@
 // session (in order), then a final "Completed" step. A person's current step
 // tells us how many sessions they have finished.
 
-import { SESSIONS } from "./course";
+import { getSessions } from "./content";
 
 const API = process.env.PCO_API_BASE ?? "https://api.planningcenteronline.com/people/v2";
 
 export type Progress = {
-  /** Number of sessions finished (0 to SESSIONS.length). */
+  /** Number of sessions finished (0 to the number of sessions). */
   completed: number;
   total: number;
   cardId: string;
@@ -94,12 +94,28 @@ async function createCard(personId: string): Promise<Card> {
   return json.data as Card;
 }
 
-/** Reads progress, adding the person to the workflow on their first visit. */
-export async function getProgress(personId: string): Promise<Progress> {
-  const [stepIds, existing] = await Promise.all([getStepIds(), findCard(personId)]);
+/**
+ * Reads progress, adding the person to the workflow on their first visit.
+ * Pass `create: false` for look-ups that must not add anyone to the workflow;
+ * a person with no card is then reported as `{ completed: 0, cardId: null }`.
+ */
+export async function getProgress(personId: string): Promise<Progress>;
+export async function getProgress(
+  personId: string,
+  opts: { create: false },
+): Promise<Omit<Progress, "cardId"> & { cardId: string | null }>;
+export async function getProgress(personId: string, opts: { create?: boolean } = {}) {
+  const [stepIds, existing, sessions] = await Promise.all([
+    getStepIds(),
+    findCard(personId),
+    getSessions(),
+  ]);
+  const total = sessions.length;
+  if (!existing && opts.create === false) {
+    return { completed: 0, total, cardId: null };
+  }
   const card = existing ?? (await createCard(personId));
 
-  const total = SESSIONS.length;
   const currentStepId = card.relationships?.current_step?.data?.id;
   const index = currentStepId ? stepIds.indexOf(currentStepId) : 0;
   const completed = card.attributes.completed_at ? total : Math.min(Math.max(index, 0), total);
@@ -120,4 +136,28 @@ export async function completeSession(personId: string, session: number): Promis
     body: JSON.stringify({}),
   });
   return { ...progress, completed: progress.completed + 1 };
+}
+
+export type PersonResult = { id: string; name: string; avatar: string };
+
+/** Searches Planning Center People by name (admin page). */
+export async function searchPeople(query: string): Promise<PersonResult[]> {
+  const json = await pco(
+    `/people?where[search_name]=${encodeURIComponent(query)}&per_page=10`,
+  );
+  return ((json?.data ?? []) as {
+    id: string;
+    attributes: { name?: string; avatar?: string };
+  }[]).map((p) => ({
+    id: p.id,
+    name: p.attributes.name ?? "(no name)",
+    avatar: p.attributes.avatar?.startsWith("https://") ? p.attributes.avatar : "",
+  }));
+}
+
+/** Admin action: moves a person's card one step forward, whatever session they're on. */
+export async function advanceOneStep(personId: string): Promise<Progress> {
+  const progress = await getProgress(personId);
+  if (progress.completed >= progress.total) return progress;
+  return completeSession(personId, progress.completed + 1);
 }

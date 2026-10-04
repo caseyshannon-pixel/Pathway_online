@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { SESSIONS } from "@/lib/course";
+import { getSessions } from "@/lib/content";
 import { completeSession } from "@/lib/pcoWorkflow";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
-  if (!Number.isInteger(number) || number < 1 || number > SESSIONS.length) {
+  if (!Number.isInteger(number) || number < 1 || number > (await getSessions()).length) {
     return NextResponse.json({ error: "Unknown session" }, { status: 400 });
   }
 

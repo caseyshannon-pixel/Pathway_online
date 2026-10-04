@@ -1,9 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { SESSIONS } from "@/lib/course";
+import { getSessions } from "@/lib/content";
 import { getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
 import SessionPlayer from "@/components/SessionPlayer";
+import Prose from "@/components/Prose";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,8 @@ export default async function SessionPage({
 
   const { session: raw } = await params;
   const number = Number(raw);
-  const session = SESSIONS.find((s) => s.number === number);
+  const sessions = await getSessions();
+  const session = sessions.find((s) => s.number === number);
   if (!session) notFound();
 
   let progress: Progress;
@@ -42,7 +44,7 @@ export default async function SessionPage({
 
   if (number > progress.completed + 1) redirect("/course");
 
-  const isLast = number === SESSIONS.length;
+  const isLast = number === sessions.length;
   const alreadyCompleted = number <= progress.completed;
 
   return (
@@ -52,6 +54,7 @@ export default async function SessionPage({
         <p><a className="back" href="/course">&larr; All sessions</a></p>
         <div className="card">
           <h1>{session.title}</h1>
+          <Prose text={session.description} className="session-intro" />
           {session.youtubeId ? (
             <SessionPlayer
               session={session.number}
@@ -62,6 +65,40 @@ export default async function SessionPage({
             />
           ) : (
             <p className="muted">This session's video isn't ready yet. Please check back soon.</p>
+          )}
+
+          {(session.notes || session.links.length > 0) && (
+            <section className="session-section">
+              <h2>Notes</h2>
+              <Prose text={session.notes} />
+              {session.links.length > 0 && (
+                <ul className="session-links">
+                  {session.links.map((l, i) => (
+                    <li key={i}>
+                      <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {session.formUrl && (
+            <section className="session-section">
+              <h2>{session.formTitle || "Next step"}</h2>
+              <iframe
+                className="form-frame"
+                src={session.formUrl}
+                title={session.formTitle || `Form for ${session.title}`}
+                loading="lazy"
+              />
+              <p className="muted form-fallback">
+                Trouble with the form?{" "}
+                <a href={session.formUrl} target="_blank" rel="noopener noreferrer">
+                  Open it in a new tab
+                </a>.
+              </p>
+            </section>
           )}
         </div>
       </main>
