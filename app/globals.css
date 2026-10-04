@@ -1,10 +1,12 @@
 :root {
-  --bg: #f5f6f8;
+  /* Colors from rockc3.com */
+  --bg: #fafaf9;
   --surface: #ffffff;
-  --text: #1f2933;
-  --muted: #667085;
-  --line: #e4e7ec;
-  --accent: #2563eb;
+  --text: #474546;
+  --muted: #6f6a6d;
+  --line: #e1ddd9;
+  --accent: #f07a3c;
+  --accent-strong: #b8501c; /* darker orange for small text on light backgrounds */
   --accent-text: #ffffff;
   --radius: 14px;
 }
@@ -16,7 +18,7 @@ html, body { margin: 0; padding: 0; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-archivo), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -36,7 +38,17 @@ body {
   gap: 16px;
 }
 
-.brand { font-weight: 700; font-size: 1.05rem; }
+.brand {
+  font-family: var(--font-archivo-black), var(--font-archivo), sans-serif;
+  font-size: 1.05rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+h1, h2 {
+  font-family: var(--font-archivo-black), var(--font-archivo), sans-serif;
+  font-weight: 400;
+}
 
 .page {
   max-width: 880px;
@@ -117,7 +129,7 @@ body {
   height: 34px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 12%, white);
-  color: var(--accent);
+  color: var(--accent-strong);
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -125,6 +137,28 @@ body {
 }
 
 .chapter-title { font-weight: 600; }
+
+/* Segmented progress bar */
+.progress {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+  margin: 20px 0 0;
+}
+
+.progress-segment { display: grid; gap: 6px; justify-items: center; }
+
+.progress-fill {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.progress-fill.is-done { background: var(--accent); }
+
+.progress-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
 
 /* Course sessions */
 .chapters li { margin: 0; }
@@ -142,7 +176,7 @@ body {
 .chapter-title { flex: 1; }
 
 .status { font-size: 0.85rem; color: var(--muted); }
-.status-next { color: var(--accent); font-weight: 600; }
+.status-next { color: var(--accent-strong); font-weight: 600; }
 .status-done { color: #067647; font-weight: 600; }
 
 .back { color: var(--muted); text-decoration: none; }
