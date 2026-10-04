@@ -82,6 +82,7 @@ h1, h2 {
   padding: 12px 24px;
   cursor: pointer;
   text-decoration: none;
+  text-transform: capitalize; /* Each Word Starts With A Capital */
 }
 
 .btn:hover { filter: brightness(0.95); }
