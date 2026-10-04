@@ -129,8 +129,9 @@ export async function getSessions(): Promise<Session[]> {
   }
 }
 
+/** Older stores use a read/write token; newer ones give the project a store id instead. */
 export function storageConfigured() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 }
 
 export async function saveSessions(sessions: Session[]) {
