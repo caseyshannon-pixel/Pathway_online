@@ -84,6 +84,13 @@ async function findCard(personId: string): Promise<Card | null> {
   );
 }
 
+function completedFrom(card: Card | null, stepIds: string[], total: number) {
+  if (!card) return 0;
+  const currentStepId = card.relationships?.current_step?.data?.id;
+  const index = currentStepId ? stepIds.indexOf(currentStepId) : 0;
+  return card.attributes.completed_at ? total : Math.min(Math.max(index, 0), total);
+}
+
 async function createCard(personId: string): Promise<Card> {
   const json = await pco(`/workflows/${workflowId()}/cards`, {
     method: "POST",
@@ -116,11 +123,7 @@ export async function getProgress(personId: string, opts: { create?: boolean } =
   }
   const card = existing ?? (await createCard(personId));
 
-  const currentStepId = card.relationships?.current_step?.data?.id;
-  const index = currentStepId ? stepIds.indexOf(currentStepId) : 0;
-  const completed = card.attributes.completed_at ? total : Math.min(Math.max(index, 0), total);
-
-  return { completed, total, cardId: card.id };
+  return { completed: completedFrom(card, stepIds, total), total, cardId: card.id };
 }
 
 /**
@@ -138,21 +141,105 @@ export async function completeSession(personId: string, session: number): Promis
   return { ...progress, completed: progress.completed + 1 };
 }
 
-export type PersonResult = { id: string; name: string; avatar: string };
+export type PersonDetail = {
+  id: string;
+  name: string;
+  avatar: string;
+  status: string;
+  membership: string;
+  age: number | null;
+  grade: string;
+  campus: string;
+  email: string;
+  phone: string;
+};
 
-/** Searches Planning Center People by name (admin page). */
-export async function searchPeople(query: string): Promise<PersonResult[]> {
-  const json = await pco(
-    `/people?where[search_name]=${encodeURIComponent(query)}&per_page=10`,
+function ageFrom(birthdate?: string | null): number | null {
+  const m = birthdate ? /^(\d{4})-(\d{2})-(\d{2})/.exec(birthdate) : null;
+  if (!m) return null;
+  const now = new Date();
+  let age = now.getFullYear() - Number(m[1]);
+  const month = now.getMonth() + 1;
+  const birthdayPending =
+    month < Number(m[2]) || (month === Number(m[2]) && now.getDate() < Number(m[3]));
+  if (birthdayPending) age -= 1;
+  return age >= 0 && age < 130 ? age : null;
+}
+
+function gradeLabel(grade: unknown): string {
+  if (typeof grade !== "number") return "";
+  if (grade < 0) return "Pre-K";
+  if (grade === 0) return "Kindergarten";
+  return `Grade ${grade}`;
+}
+
+type Resource = { type: string; id: string; attributes?: Record<string, unknown> };
+type Rel = { data?: { type: string; id: string } | { type: string; id: string }[] | null };
+
+function peopleUrl(param: string, query: string) {
+  return (
+    `/people?where[${param}]=${encodeURIComponent(query)}` +
+    `&include=emails,phone_numbers,primary_campus&per_page=10`
   );
-  return ((json?.data ?? []) as {
-    id: string;
-    attributes: { name?: string; avatar?: string };
-  }[]).map((p) => ({
-    id: p.id,
-    name: p.attributes.name ?? "(no name)",
-    avatar: p.attributes.avatar?.startsWith("https://") ? p.attributes.avatar : "",
-  }));
+}
+
+/**
+ * Searches Planning Center People (name, email or phone) for the admin pages.
+ * Birthdates are turned into an age here and never sent on.
+ */
+export async function searchPeople(query: string): Promise<PersonDetail[]> {
+  let json;
+  try {
+    json = await pco(peopleUrl("search_name_or_email_or_phone_number", query));
+  } catch {
+    json = await pco(peopleUrl("search_name", query));
+  }
+
+  const included = new Map<string, Resource>();
+  for (const r of (json?.included ?? []) as Resource[]) included.set(`${r.type}:${r.id}`, r);
+  const related = (rel?: Rel): Resource[] => {
+    const d = rel?.data;
+    return (Array.isArray(d) ? d : d ? [d] : [])
+      .map((r) => included.get(`${r.type}:${r.id}`))
+      .filter((r): r is Resource => Boolean(r));
+  };
+  const text = (v: unknown) => (typeof v === "string" ? v : "");
+
+  return ((json?.data ?? []) as (Resource & { relationships?: Record<string, Rel> })[]).map((p) => {
+    const a = p.attributes ?? {};
+    const emails = related(p.relationships?.emails);
+    const phones = related(p.relationships?.phone_numbers);
+    const email = emails.find((e) => e.attributes?.primary) ?? emails[0];
+    const phone = phones.find((n) => n.attributes?.primary) ?? phones[0];
+    const avatar = text(a.avatar);
+    return {
+      id: p.id,
+      name: text(a.name) || "(no name)",
+      avatar: avatar.startsWith("https://") ? avatar : "",
+      status: text(a.status),
+      membership: text(a.membership),
+      age: ageFrom(text(a.birthdate)),
+      grade: gradeLabel(a.grade),
+      campus: text(related(p.relationships?.primary_campus)[0]?.attributes?.name),
+      email: text(email?.attributes?.address),
+      phone: text(phone?.attributes?.number),
+    };
+  });
+}
+
+/** Sessions finished by each person, without adding anyone to the workflow. */
+export async function getProgressMany(
+  personIds: string[],
+): Promise<Map<string, { completed: number; total: number }>> {
+  const [stepIds, sessions, cards] = await Promise.all([
+    getStepIds(),
+    getSessions(),
+    Promise.all(personIds.map((id) => findCard(id))),
+  ]);
+  const total = sessions.length;
+  return new Map(
+    personIds.map((id, i) => [id, { completed: completedFrom(cards[i], stepIds, total), total }]),
+  );
 }
 
 /** Admin action: moves a person's card one step forward, whatever session they're on. */

@@ -311,3 +311,31 @@ h1, h2 {
   font-weight: 700;
 }
 .person-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Planning Center-style people search */
+.psearch { margin-top: 12px; }
+.psearch-box {
+  display: flex; align-items: center; gap: 10px; padding: 0 16px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted);
+}
+.psearch-box:focus-within { border-color: #2266f7; box-shadow: 0 0 0 3px rgba(34, 102, 247, 0.2); }
+.psearch-box input {
+  flex: 1; border: 0; outline: 0; background: none; font: inherit; color: var(--text); padding: 13px 0; min-width: 0;
+}
+.psearch-state { min-height: 8px; }
+.psearch-results { list-style: none; margin: 12px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.psearch-results:empty { display: none; }
+.psearch-row {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--surface);
+}
+.psearch-row + .psearch-row { border-top: 1px solid var(--line); }
+.psearch-row:hover { background: #f4f8ff; }
+.psearch-main { flex: 1; min-width: 0; }
+.psearch-name { font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.psearch-meta { font-size: 0.88rem; color: var(--muted); overflow-wrap: anywhere; }
+.badge {
+  font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: #eef0f3; color: var(--muted);
+}
+.badge-active { background: #ecfdf3; color: #067647; }
+@media (max-width: 560px) { .psearch-row { flex-wrap: wrap; } .psearch-row form { margin-left: 54px; } }

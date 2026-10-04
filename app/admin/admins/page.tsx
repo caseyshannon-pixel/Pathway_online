@@ -2,9 +2,8 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
 import { storageConfigured } from "@/lib/blobStore";
-import { searchPeople, type PersonResult } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
-import PersonAvatar from "@/components/PersonAvatar";
+import PersonSearch from "@/components/PersonSearch";
 
 export const dynamic = "force-dynamic";
 
@@ -21,17 +20,6 @@ export default async function AdminAdmins({
   const owners = ownerIds();
   const added_ = await getAddedAdmins();
   const adminIds = new Set([...owners, ...added_.map((a) => a.id)]);
-
-  let results: PersonResult[] = [];
-  let searchFailed = false;
-  if (query) {
-    try {
-      results = await searchPeople(query);
-    } catch (err) {
-      console.error("Admin search failed:", err);
-      searchFailed = true;
-    }
-  }
 
   return (
     <>
@@ -51,7 +39,7 @@ export default async function AdminAdmins({
               this project in Vercel first.
             </p>
           )}
-          {(error || searchFailed) && (
+          {error && (
             <p className="notice" role="alert">
               {error === "storage"
                 ? "Saving isn't set up yet. Connect a Blob store to this project in Vercel first."
@@ -88,31 +76,12 @@ export default async function AdminAdmins({
           </ul>
 
           <h2>Add an admin</h2>
-          <form className="admin-search" action="/admin/admins" method="get">
-            <input name="q" defaultValue={query} placeholder="Search by name" aria-label="Search by name" />
-            <button className="btn" type="submit">Search</button>
-          </form>
-
-          {query && !searchFailed && results.length === 0 && <p className="muted">No one found.</p>}
-
-          <ul className="chapters">
-            {results.map((p) => (
-              <li key={p.id} className="chapter">
-                <PersonAvatar name={p.name} src={p.avatar} />
-                <span className="chapter-title">{p.name}</span>
-                {adminIds.has(p.id) ? (
-                  <span className="status status-done">Already an admin</span>
-                ) : (
-                  <form action="/api/admin/admins" method="post">
-                    <input type="hidden" name="action" value="add" />
-                    <input type="hidden" name="personId" value={p.id} />
-                    <input type="hidden" name="q" value={query} />
-                    <button className="btn" type="submit">Make admin</button>
-                  </form>
-                )}
-              </li>
-            ))}
-          </ul>
+          <PersonSearch
+            mode="admin"
+            initialQuery={query}
+            adminIds={[...adminIds]}
+            highlightId={added}
+          />
         </div>
       </main>
     </>
