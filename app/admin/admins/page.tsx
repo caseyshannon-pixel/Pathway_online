@@ -4,6 +4,7 @@ import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
 import { storageConfigured } from "@/lib/blobStore";
 import { searchPeople, type PersonResult } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
+import PersonAvatar from "@/components/PersonAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,7 @@ export default async function AdminAdmins({
           <ul className="chapters">
             {results.map((p) => (
               <li key={p.id} className="chapter">
+                <PersonAvatar name={p.name} src={p.avatar} />
                 <span className="chapter-title">{p.name}</span>
                 {adminIds.has(p.id) ? (
                   <span className="status status-done">Already an admin</span>

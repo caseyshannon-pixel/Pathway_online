@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { isAdmin } from "@/lib/admin";
 import { getProgress, searchPeople, type PersonResult } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
+import PersonAvatar from "@/components/PersonAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,7 @@ export default async function Admin({
               const finished = r.completed >= r.total;
               return (
                 <li key={r.id} className="chapter">
+                  <PersonAvatar name={r.name} src={r.avatar} />
                   <span className="chapter-title">
                     {r.name}
                     {done === r.id && <span className="status-done"> · Moved forward</span>}
