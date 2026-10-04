@@ -280,6 +280,14 @@ h1, h2 {
 .link-btn.danger { color: #b42318; margin-left: auto; }
 .editor-hint { font-size: 0.9rem; margin: 4px 0 0; }
 .editor-footer { display: flex; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+.btn-dark {
+  background: var(--accent-strong);
+  font-family: var(--font-archivo-black), var(--font-archivo), sans-serif;
+  font-weight: 400;
+}
+
+.admin-nav { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 24px; }
+
 .btn-secondary { background: none; color: var(--accent-strong); border: 2px solid var(--accent); padding: 10px 22px; }
 .btn:disabled { opacity: 0.6; cursor: default; }
 .saved {

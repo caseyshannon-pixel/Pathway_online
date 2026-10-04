@@ -42,11 +42,10 @@ export default async function Admin({
       <main className="page">
         <div className="card">
           <h1>Admin</h1>
-          <p className="muted">
-            <a href="/admin/content">Edit session content &rarr;</a>
-            {" · "}
-            <a href="/admin/admins">Manage admins &rarr;</a>
-          </p>
+          <div className="admin-nav">
+            <a className="btn btn-dark" href="/admin/content">Edit session content</a>
+            <a className="btn btn-dark" href="/admin/admins">Manage admins</a>
+          </div>
           <h2>Move someone forward</h2>
           <p className="muted">Find a person and move them to their next session.</p>
 
