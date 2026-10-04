@@ -10,7 +10,7 @@ export default async function TopBar() {
       <div className="topbar-inner">
         <a className="brand" href="/course">Pathway Online</a>
         <div className="topbar-right">
-          {isAdmin(session) && <a className="back" href="/admin">Admin</a>}
+          {(await isAdmin(session)) && <a className="back" href="/admin">Admin</a>}
           <form action="/api/auth/logout" method="post">
           <button className="avatar-btn" type="submit" aria-label="Sign out" title="Sign out">
             {session?.avatar ? (

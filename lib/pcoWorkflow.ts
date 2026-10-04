@@ -161,3 +161,9 @@ export async function advanceOneStep(personId: string): Promise<Progress> {
   if (progress.completed >= progress.total) return progress;
   return completeSession(personId, progress.completed + 1);
 }
+
+/** Looks up a person's name by Planning Center id; throws if they don't exist. */
+export async function getPersonName(personId: string): Promise<string> {
+  const json = await pco(`/people/${personId}`);
+  return json?.data?.attributes?.name ?? "";
+}

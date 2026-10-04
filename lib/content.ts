@@ -3,7 +3,7 @@
 // Saved content is one JSON file in Vercel Blob. If nothing has been saved yet
 // (or Blob isn't set up), the defaults in ./course are used.
 
-import { list, put } from "@vercel/blob";
+import { readJson, writeJson } from "./blobStore";
 import { DEFAULT_SESSIONS, type Session, type SessionLink } from "./course";
 
 const PATH = "pathway/course.json";
@@ -112,16 +112,14 @@ export function validateSessions(input: unknown): Validated {
   return { ok: true, sessions };
 }
 
+export { storageConfigured } from "./blobStore";
+
 /** Current course content: saved copy if there is one, otherwise the defaults. */
 export async function getSessions(): Promise<Session[]> {
   try {
-    const { blobs } = await list({ prefix: PATH, limit: 5 });
-    const hit = blobs.find((b) => b.pathname === PATH);
-    if (!hit) return DEFAULT_SESSIONS;
-    // The query string keeps a stale CDN copy from being served after an edit.
-    const res = await fetch(`${hit.url}?t=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Blob read failed (${res.status})`);
-    const checked = validateSessions(await res.json());
+    const data = await readJson(PATH);
+    if (data === null) return DEFAULT_SESSIONS;
+    const checked = validateSessions(data);
     return checked.ok ? checked.sessions : DEFAULT_SESSIONS;
   } catch (err) {
     console.error("Could not load saved course content, using defaults:", err);
@@ -129,18 +127,6 @@ export async function getSessions(): Promise<Session[]> {
   }
 }
 
-/** Older stores use a read/write token; newer ones give the project a store id instead. */
-export function storageConfigured() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
-}
-
 export async function saveSessions(sessions: Session[]) {
-  if (!storageConfigured()) throw new Error("STORAGE_NOT_SET_UP");
-  await put(PATH, JSON.stringify(sessions), {
-    access: "public",
-    contentType: "application/json",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    cacheControlMaxAge: 60,
-  });
+  await writeJson(PATH, sessions);
 }

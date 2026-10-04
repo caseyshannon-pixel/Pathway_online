@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function PUT(req: NextRequest) {
   const session = await getSession();
-  if (!isAdmin(session)) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  if (!(await isAdmin(session))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
   let body: { sessions?: unknown };
   try {

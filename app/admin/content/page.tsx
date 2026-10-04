@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminContent() {
   const session = await getSession();
-  if (!isAdmin(session)) notFound();
+  if (!(await isAdmin(session))) notFound();
 
   const sessions = await getSessions();
 

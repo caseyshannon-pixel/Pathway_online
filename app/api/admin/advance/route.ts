@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!isAdmin(session)) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  if (!(await isAdmin(session))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
   const form = await req.formData();
   const personId = String(form.get("personId") ?? "");

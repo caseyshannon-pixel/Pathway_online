@@ -14,7 +14,7 @@ export default async function Admin({
   searchParams: Promise<{ q?: string; done?: string; error?: string }>;
 }) {
   const session = await getSession();
-  if (!isAdmin(session)) notFound();
+  if (!(await isAdmin(session))) notFound();
 
   const { q = "", done, error } = await searchParams;
   const query = q.trim();
@@ -44,6 +44,8 @@ export default async function Admin({
           <h1>Admin</h1>
           <p className="muted">
             <a href="/admin/content">Edit session content &rarr;</a>
+            {" · "}
+            <a href="/admin/admins">Manage admins &rarr;</a>
           </p>
           <h2>Move someone forward</h2>
           <p className="muted">Find a person and move them to their next session.</p>
