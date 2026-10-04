@@ -8,6 +8,7 @@ export type Session = {
   personId: string;
   name: string;
   firstName: string;
+  avatar?: string; // PCO photo URL; missing on sessions created before this was added
 };
 
 function key() {
@@ -45,6 +46,7 @@ export async function getSession(): Promise<Session | null> {
       personId: String(payload.personId),
       name: String(payload.name),
       firstName: String(payload.firstName),
+      avatar: payload.avatar ? String(payload.avatar) : "",
     };
   } catch {
     return null;

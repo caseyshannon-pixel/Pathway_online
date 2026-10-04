@@ -48,7 +48,7 @@ export async function fetchMe(accessToken: string) {
   const json = (await res.json()) as {
     data: {
       id: string;
-      attributes: { name?: string; first_name?: string };
+      attributes: { name?: string; first_name?: string; avatar?: string };
     };
   };
   const a = json.data.attributes;
@@ -56,5 +56,6 @@ export async function fetchMe(accessToken: string) {
     personId: json.data.id,
     name: a.name ?? "",
     firstName: a.first_name ?? a.name ?? "",
+    avatar: a.avatar?.startsWith("https://") ? a.avatar : "",
   };
 }
