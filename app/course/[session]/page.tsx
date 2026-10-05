@@ -5,7 +5,6 @@ import { getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
 import SessionPlayer from "@/components/SessionPlayer";
 import Prose from "@/components/Prose";
-import FormEmbed from "@/components/FormEmbed";
 
 export const dynamic = "force-dynamic";
 
@@ -87,13 +86,18 @@ export default async function SessionPage({
           {session.formUrl && (
             <section className="session-section">
               <h2>{session.formTitle || "Next step"}</h2>
-              <FormEmbed src={session.formUrl} title={session.formTitle || `Form for ${session.title}`} />
-              <p className="muted form-fallback">
-                Trouble with the form?{" "}
-                <a href={session.formUrl} target="_blank" rel="noopener noreferrer">
-                  Open it in a new tab
-                </a>.
+              <p className="muted">
+                This form opens in Church Center. Sign in with your Planning Center login and
+                your information will be filled in for you.
               </p>
+              <a
+                className="btn btn-dark"
+                href={session.formUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open The Form
+              </a>
             </section>
           )}
         </div>
