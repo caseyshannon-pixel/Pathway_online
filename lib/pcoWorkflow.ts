@@ -254,3 +254,16 @@ export async function getPersonName(personId: string): Promise<string> {
   const json = await pco(`/people/${personId}`);
   return json?.data?.attributes?.name ?? "";
 }
+
+/** A person's primary email (falls back to their first), or "" if none/unavailable. */
+export async function getPrimaryEmail(personId: string): Promise<string> {
+  try {
+    const json = await pco(`/people/${personId}/emails?per_page=25`);
+    const emails = (json?.data ?? []) as { attributes?: { address?: string; primary?: boolean } }[];
+    const pick = emails.find((e) => e.attributes?.primary) ?? emails[0];
+    return pick?.attributes?.address ?? "";
+  } catch (err) {
+    console.error("Could not load email for form pre-fill:", err);
+    return "";
+  }
+}

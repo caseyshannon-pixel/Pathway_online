@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
-import { getProgress, type Progress } from "@/lib/pcoWorkflow";
+import { getPrimaryEmail, getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
 import SessionPlayer from "@/components/SessionPlayer";
 import Prose from "@/components/Prose";
@@ -45,6 +45,17 @@ export default async function SessionPage({
 
   if (number > progress.completed + 1) redirect("/course");
 
+  // Church Center fills in the email field from ?email= (it ignores name parameters).
+  let formUrl = session.formUrl;
+  if (formUrl) {
+    const email = await getPrimaryEmail(user.personId);
+    if (email) {
+      const u = new URL(formUrl);
+      u.searchParams.set("email", email);
+      formUrl = u.toString();
+    }
+  }
+
   const isLast = number === sessions.length;
   const alreadyCompleted = number <= progress.completed;
 
@@ -84,13 +95,13 @@ export default async function SessionPage({
             </section>
           )}
 
-          {session.formUrl && (
+          {formUrl && (
             <section className="session-section">
               <h2>{session.formTitle || "Next step"}</h2>
-              <FormEmbed src={session.formUrl} title={session.formTitle || `Form for ${session.title}`} />
+              <FormEmbed src={formUrl} title={session.formTitle || `Form for ${session.title}`} />
               <p className="muted form-fallback">
                 Trouble with the form?{" "}
-                <a href={session.formUrl} target="_blank" rel="noopener noreferrer">
+                <a href={formUrl} target="_blank" rel="noopener noreferrer">
                   Open it in a new tab
                 </a>.
               </p>
