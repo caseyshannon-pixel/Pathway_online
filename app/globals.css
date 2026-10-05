@@ -260,12 +260,16 @@ h1, h2 {
   display: block;
 }
 
-@media (max-width: 560px) {
+.form-open-btn { display: none; }
+
+@media (max-width: 640px) {
   .page { padding-left: 12px; padding-right: 12px; }
   .card { padding: 20px 16px; }
-  /* Let the form use the card's full width, and give it room so it scrolls less inside */
-  .form-frame { height: 1300px; }
+  /* Phones: the embedded form gets cut off, so show a button to open it on its own page instead */
+  .form-frame, .form-fallback { display: none; }
+  .form-open-btn { display: block; text-align: center; margin-top: 12px; }
 }
+
 .form-fallback { font-size: 0.9rem; margin: 10px 0 0; }
 .form-fallback a { color: var(--accent-strong); }
 

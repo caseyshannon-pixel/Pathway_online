@@ -92,6 +92,14 @@ export default async function SessionPage({
                 title={session.formTitle || `Form for ${session.title}`}
                 loading="lazy"
               />
+              <a
+                className="btn btn-dark form-open-btn"
+                href={session.formUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open The Form
+              </a>
               <p className="muted form-fallback">
                 Trouble with the form?{" "}
                 <a href={session.formUrl} target="_blank" rel="noopener noreferrer">
