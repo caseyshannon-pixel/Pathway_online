@@ -64,10 +64,16 @@ async function getStepIds(): Promise<string[]> {
 
 type Card = {
   id: string;
-  attributes: { completed_at?: string | null; removed_at?: string | null };
+  attributes: {
+    completed_at?: string | null;
+    removed_at?: string | null;
+    created_at?: string | null;
+    moved_to_step_at?: string | null;
+  };
   relationships?: {
     workflow?: { data?: { id: string } | null };
     current_step?: { data?: { id: string } | null };
+    person?: { data?: { id: string } | null };
   };
 };
 
@@ -253,4 +259,63 @@ export async function advanceOneStep(personId: string): Promise<Progress> {
 export async function getPersonName(personId: string): Promise<string> {
   const json = await pco(`/people/${personId}`);
   return json?.data?.attributes?.name ?? "";
+}
+
+export type CardInfo = {
+  cardId: string;
+  personId: string;
+  name: string;
+  avatar: string;
+  /** Sessions finished (0 to total). */
+  completed: number;
+  createdAt: string;
+  /** When the card last moved to its current step. */
+  movedAt: string;
+};
+
+export type WorkflowSnapshot = { total: number; titles: string[]; cards: CardInfo[] };
+
+let snapshotCache: { at: number; value: WorkflowSnapshot } | null = null;
+
+/** Every active card in the Pathway workflow (admin dashboard). Cached for a minute. */
+export async function getWorkflowSnapshot(): Promise<WorkflowSnapshot> {
+  if (snapshotCache && Date.now() - snapshotCache.at < 60_000) return snapshotCache.value;
+
+  const [stepIds, sessions] = await Promise.all([getStepIds(), getSessions()]);
+  const total = sessions.length;
+  const wid = workflowId();
+  const cards: CardInfo[] = [];
+
+  const PAGE = 100;
+  for (let offset = 0; offset < 5000; offset += PAGE) {
+    const json = await pco(
+      `/workflows/${wid}/cards?include=current_step,person&per_page=${PAGE}&offset=${offset}`,
+    );
+    const data = (json?.data ?? []) as (Card & { id: string })[];
+    const people = new Map<string, { name?: string; avatar?: string }>();
+    for (const inc of (json?.included ?? []) as { type: string; id: string; attributes?: { name?: string; avatar?: string } }[]) {
+      if (inc.type === "Person") people.set(inc.id, inc.attributes ?? {});
+    }
+    for (const c of data) {
+      if (c.attributes.removed_at) continue;
+      const personId = c.relationships?.person?.data?.id ?? "";
+      const person = people.get(personId);
+      const avatar = person?.avatar ?? "";
+      const created = c.attributes.created_at ?? "";
+      cards.push({
+        cardId: c.id,
+        personId,
+        name: person?.name ?? "(unknown)",
+        avatar: avatar.startsWith("https://") ? avatar : "",
+        completed: completedFrom(c, stepIds, total),
+        createdAt: created,
+        movedAt: c.attributes.moved_to_step_at ?? created,
+      });
+    }
+    if (data.length < PAGE) break;
+  }
+
+  const value = { total, titles: sessions.map((s) => s.title), cards };
+  snapshotCache = { at: Date.now(), value };
+  return value;
 }

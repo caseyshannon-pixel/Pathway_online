@@ -24,6 +24,7 @@ export default async function Admin({
         <div className="card">
           <h1>Admin</h1>
           <div className="admin-nav">
+            <a className="btn btn-dark" href="/admin/dashboard">Dashboard</a>
             <a className="btn btn-dark" href="/admin/content">Edit session content</a>
             <a className="btn btn-dark" href="/admin/admins">Manage admins</a>
           </div>
