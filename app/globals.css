@@ -224,7 +224,7 @@ h1, h2 {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
   overflow: hidden;
 }
 .player-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
@@ -420,3 +420,44 @@ h1, h2 {
   font: inherit; color: var(--text); cursor: pointer;
 }
 .account-signout:hover, .account-signout:focus-visible { background: #f4f2f0; }
+
+/* Custom video controls */
+.player-controls {
+  display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+  background: var(--text); color: #fff; border-radius: 0 0 12px 12px;
+}
+.pc-btn {
+  min-width: 40px; height: 40px; padding: 0 8px; display: grid; place-items: center; flex: none;
+  background: none; border: 0; border-radius: 8px; color: #fff; font: inherit; cursor: pointer;
+}
+.pc-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.15); }
+.pc-btn:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
+.pc-btn:disabled { opacity: 0.45; cursor: default; }
+.pc-text { font-weight: 700; font-size: 0.85rem; }
+.pc-text.is-on { background: #fff; color: var(--text); }
+.pc-text.is-on:hover:not(:disabled) { background: #fff; }
+.pc-time { font-size: 0.85rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pc-seek {
+  flex: 1; min-width: 80px; height: 24px; -webkit-appearance: none; appearance: none; background: none; cursor: pointer;
+}
+.pc-seek::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) var(--pct, 0%), rgba(255, 255, 255, 0.3) var(--pct, 0%));
+}
+.pc-seek::-moz-range-track { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.3); }
+.pc-seek::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--accent); }
+.pc-seek::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; margin-top: -5px; border-radius: 50%; background: #fff; border: 0;
+}
+.pc-seek::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 0; }
+.pc-seek:focus-visible { outline: 3px solid #fff; outline-offset: 2px; border-radius: 6px; }
+.pc-note { font-size: 0.88rem; margin: 8px 0 0; }
+.player-shell:fullscreen { display: flex; flex-direction: column; background: #000; }
+.player-shell:fullscreen .player-wrap { flex: 1; aspect-ratio: auto; border-radius: 0; }
+.player-shell:fullscreen .player-controls { border-radius: 0; }
+.player-shell:-webkit-full-screen { display: flex; flex-direction: column; background: #000; }
+.player-shell:-webkit-full-screen .player-wrap { flex: 1; aspect-ratio: auto; border-radius: 0; }
+@media (max-width: 560px) {
+  .player-controls { flex-wrap: wrap; }
+  .pc-seek { order: -1; flex-basis: 100%; }
+}
