@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
-import { storageConfigured } from "@/lib/blobStore";
+import { privateStorageConfigured, storageConfigured } from "@/lib/blobStore";
 import TopBar from "@/components/TopBar";
 import PersonSearch from "@/components/PersonSearch";
 
@@ -33,7 +33,7 @@ export default async function AdminAdmins({
             admins.
           </p>
 
-          {!storageConfigured() && (
+          {!storageConfigured() && !privateStorageConfigured() && (
             <p className="notice" role="alert">
               Saving isn't set up yet, so admins can't be added or removed. Connect a Blob store to
               this project in Vercel first.

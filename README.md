@@ -39,4 +39,4 @@ Edit `lib/course.ts` and paste each YouTube video ID (the part after `v=`).
 - Admins are the Planning Center person ids in `ADMIN_PERSON_IDS` (owners, only changeable in Vercel) plus anyone added on the Admin > Manage admins page.
 - Every response carries security headers (see `next.config.mjs`). Admin actions also check that the request came from this site (`lib/security.ts`) and are rate limited per person.
 - Session progress is reported by the browser when a video ends, so a determined signed-in person could mark a session finished without watching it. Treat completions as honor-system, not proof.
-- The list of added admins is stored in a public Blob file (names and person ids only; it does not grant access).
+- The list of added admins is stored in a separate **private** Blob store. Set `PRIVATE_BLOB_STORE_ID` to its store id in Vercel; the first time it loads, the app moves any existing list out of the public store and deletes the public copy.
