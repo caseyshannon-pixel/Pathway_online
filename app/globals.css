@@ -437,3 +437,5 @@ h1, h2 {
 .thumb-preview { width: 100%; max-width: 320px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
 .thumb-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .thumb-upload { cursor: pointer; }
+
+.session-length { margin: -4px 0 14px; font-size: 0.95rem; }

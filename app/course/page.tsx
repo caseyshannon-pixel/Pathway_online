@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
 import { CampusRequiredError, getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
+import { formatLength } from "@/lib/duration";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,11 @@ export default async function Course() {
     if (err instanceof CampusRequiredError) redirect("/choose-campus");
     console.error("Could not load progress:", err);
   }
+
+  // Only quote a total when every session's length is known.
+  const totalSeconds = sessions.every((s) => s.lengthSeconds > 0)
+    ? sessions.reduce((sum, s) => sum + s.lengthSeconds, 0)
+    : 0;
 
   const completed = progress?.completed ?? 0;
   const finished = progress !== null && completed >= sessions.length;
@@ -40,6 +46,12 @@ export default async function Course() {
               {completed === 0
                 ? "Start with Session 1 whenever you're ready."
                 : `You've finished ${completed} of ${sessions.length} sessions.`}
+            </p>
+          )}
+
+          {totalSeconds > 0 && (
+            <p className="muted">
+              {sessions.length} sessions · about {formatLength(totalSeconds)} in total
             </p>
           )}
 
@@ -75,9 +87,15 @@ export default async function Course() {
                   </span>
                   <span className="chapter-title">
                     {s.title}
-                    {!open && progress !== null && (
-                      <small className="chapter-hint">Finish session {s.number - 1} first</small>
-                    )}
+                    {(() => {
+                      const hint = [
+                        formatLength(s.lengthSeconds),
+                        !open && progress !== null ? `Finish session ${s.number - 1} first` : "",
+                      ].filter(Boolean);
+                      return hint.length > 0 ? (
+                        <small className="chapter-hint">{hint.join(" · ")}</small>
+                      ) : null;
+                    })()}
                   </span>
                   <span className={`status status-${isDone ? "done" : isNext ? "next" : "locked"}`}>
                     {status}

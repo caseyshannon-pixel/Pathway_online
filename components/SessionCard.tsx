@@ -1,6 +1,7 @@
 import type { Session } from "@/lib/course";
 import SessionPlayer from "./SessionPlayer";
 import Prose from "./Prose";
+import { formatLength } from "@/lib/duration";
 
 // The session page as people see it. Used by the real course page and by the
 // admin preview, so the two always match.
@@ -21,6 +22,9 @@ export default function SessionCard({
   return (
     <div className="card">
       <h1>{session.title}</h1>
+      {session.lengthSeconds > 0 && (
+        <p className="muted session-length">{formatLength(session.lengthSeconds)} video</p>
+      )}
       <Prose text={session.description} className="session-intro" />
       {session.youtubeId ? (
         <SessionPlayer
