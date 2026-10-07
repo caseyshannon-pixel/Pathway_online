@@ -52,15 +52,31 @@ export default function SessionPlayer({
   useEffect(() => {
     let player: any = null;
     let timer: ReturnType<typeof setInterval> | null = null;
+    let beatTimer: ReturnType<typeof setInterval> | null = null;
     let watched = 0;
     let cancelled = false;
 
     const stopTimer = () => {
       if (timer) clearInterval(timer);
+      if (beatTimer) clearInterval(beatTimer);
       timer = null;
+      beatTimer = null;
     };
 
+    // Tells the server the video is playing, so it can count real watch time.
+    const sendBeat = () =>
+      fetch("/api/progress/beat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session,
+          duration: player?.getDuration?.() ?? 0,
+          rate: player?.getPlaybackRate?.() ?? 1,
+        }),
+      }).catch(() => undefined);
+
     async function finish() {
+      await sendBeat();
       const duration = player?.getDuration?.() ?? 0;
       if (duration > 0 && watched < duration * REQUIRED_FRACTION) {
         setMessage("Watch the whole session to finish it. You can replay it from the start.");
@@ -76,6 +92,13 @@ export default function SessionPlayer({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ session }),
         });
+        if (res.status === 400) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          if (body.error === "not_watched") {
+            setMessage("Watch the whole session to finish it. You can replay it from the start.");
+            return;
+          }
+        }
         if (!res.ok) throw new Error("save failed");
         setMessage(null);
         setDone(true);
@@ -100,8 +123,10 @@ export default function SessionPlayer({
             if (e.data === S.PLAYING) {
               stopTimer();
               timer = setInterval(() => {
-                watched += 1;
+                watched += player?.getPlaybackRate?.() ?? 1;
               }, 1000);
+              void sendBeat();
+              beatTimer = setInterval(() => void sendBeat(), 10_000);
             } else if (e.data === S.ENDED) {
               stopTimer();
               void finish();

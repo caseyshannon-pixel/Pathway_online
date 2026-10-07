@@ -11,7 +11,7 @@ export type Session = {
   avatar?: string; // PCO photo URL; missing on sessions created before this was added
 };
 
-function key() {
+export function key() {
   const secret = process.env.SESSION_SECRET;
   if (!secret || secret.length < 16) {
     throw new Error("SESSION_SECRET is missing or too short.");

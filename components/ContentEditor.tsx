@@ -14,6 +14,7 @@ const emptySession = (): Session => ({
   links: [],
   formUrl: "",
   formTitle: "",
+  lengthSeconds: 0,
 });
 
 export default function ContentEditor({ initial }: { initial: Session[] }) {
@@ -93,6 +94,26 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                 onChange={(e) => update(i, { youtubeId: e.target.value })}
               />
               <small className="muted">Leave empty to show "coming soon".</small>
+            </label>
+
+            <label className="field">
+              <span>Video length in minutes (optional)</span>
+              <input
+                type="number"
+                min={0}
+                max={600}
+                step={0.5}
+                inputMode="decimal"
+                value={s.lengthSeconds ? s.lengthSeconds / 60 : ""}
+                placeholder="For example 28"
+                onChange={(e) =>
+                  update(i, { lengthSeconds: Math.round((parseFloat(e.target.value) || 0) * 60) })
+                }
+              />
+              <small className="muted">
+                Used to check that people really watched it. Without a length, the server can only
+                require about a minute of playing time.
+              </small>
             </label>
 
             <label className="field">

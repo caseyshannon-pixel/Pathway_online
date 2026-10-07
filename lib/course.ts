@@ -19,9 +19,11 @@ export type Session = {
   /** Church Center form shown below the video. Empty = no form section. */
   formUrl: string;
   formTitle: string;
+  /** Video length in seconds; 0 = not set. Used to check people really watched it. */
+  lengthSeconds: number;
 };
 
-const blank = { description: "", notes: "", links: [], formUrl: "", formTitle: "" };
+const blank = { description: "", notes: "", links: [], formUrl: "", formTitle: "", lengthSeconds: 0 };
 
 export const DEFAULT_SESSIONS: Session[] = [
   { number: 1, title: "Session 1", youtubeId: "r7HR7Xsro8M", ...blank },

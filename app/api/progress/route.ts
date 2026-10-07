@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
 import { forbidden, rateLimit, sameOrigin, tooMany } from "@/lib/security";
+import { hasWatchedEnough } from "@/lib/watch";
 import { completeSession } from "@/lib/pcoWorkflow";
 
 export const dynamic = "force-dynamic";
@@ -19,9 +20,14 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
-  if (!Number.isInteger(number) || number < 1 || number > (await getSessions()).length) {
+  const sessions = await getSessions();
+  if (!Number.isInteger(number) || number < 1 || number > sessions.length) {
     return NextResponse.json({ error: "Unknown session" }, { status: 400 });
   }
+
+  // The browser's say-so isn't enough: the server must have counted enough playing time.
+  const watch = await hasWatchedEnough(session.personId, number, sessions[number - 1].lengthSeconds);
+  if (!watch.ok) return NextResponse.json({ error: "not_watched" }, { status: 400 });
 
   try {
     const progress = await completeSession(session.personId, number);

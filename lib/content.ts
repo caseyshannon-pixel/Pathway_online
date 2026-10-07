@@ -82,6 +82,10 @@ export function validateSessions(input: unknown): Validated {
       };
     }
 
+    const rawLength = Number(raw.lengthSeconds);
+    const lengthSeconds =
+      Number.isFinite(rawLength) && rawLength > 0 ? Math.min(Math.round(rawLength), 36_000) : 0;
+
     const links: SessionLink[] = [];
     const rawLinks = Array.isArray(raw.links) ? raw.links.slice(0, 10) : [];
     for (const l of rawLinks as Record<string, unknown>[]) {
@@ -107,6 +111,7 @@ export function validateSessions(input: unknown): Validated {
       links,
       formUrl,
       formTitle: str(raw.formTitle, 100),
+      lengthSeconds,
     });
   }
   return { ok: true, sessions };
