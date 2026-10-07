@@ -204,6 +204,9 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
             )}
 
             <div className="editor-actions">
+              <a className="link-btn" href={`/admin/preview/${i + 1}`} target="_blank" rel="noopener noreferrer">
+                Preview (saved version)
+              </a>
               <button type="button" className="link-btn" onClick={() => move(i, -1)} disabled={i === 0}>
                 Move up
               </button>

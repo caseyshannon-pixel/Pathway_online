@@ -16,6 +16,8 @@ type Props = {
   alreadyCompleted: boolean;
   nextHref: string;
   nextLabel: string;
+  /** Admin preview: play normally, but never record anything. */
+  preview?: boolean;
 };
 
 // A session only counts if at least this much of the video was actually played.
@@ -44,6 +46,7 @@ export default function SessionPlayer({
   alreadyCompleted,
   nextHref,
   nextLabel,
+  preview = false,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [done, setDone] = useState(alreadyCompleted);
@@ -65,7 +68,9 @@ export default function SessionPlayer({
 
     // Tells the server the video is playing, so it can count real watch time.
     const sendBeat = () =>
-      fetch("/api/progress/beat", {
+      preview
+        ? Promise.resolve()
+        : fetch("/api/progress/beat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -76,6 +81,11 @@ export default function SessionPlayer({
       }).catch(() => undefined);
 
     async function finish() {
+      if (preview) {
+        setMessage(null);
+        setDone(true);
+        return;
+      }
       await sendBeat();
       const duration = player?.getDuration?.() ?? 0;
       if (duration > 0 && watched < duration * REQUIRED_FRACTION) {
@@ -147,7 +157,7 @@ export default function SessionPlayer({
         /* player already gone */
       }
     };
-  }, [session, youtubeId, alreadyCompleted]);
+  }, [session, youtubeId, alreadyCompleted, preview]);
 
   return (
     <div>
@@ -155,7 +165,9 @@ export default function SessionPlayer({
       {message && <p className="notice" role="alert">{message}</p>}
       {done && (
         <div className="done-banner" role="status">
-          <strong>Session {session} complete.</strong>
+          <strong>
+            Session {session} complete{preview ? " (preview, nothing was saved)" : ""}.
+          </strong>
           <a className="btn" href={nextHref}>{nextLabel}</a>
         </div>
       )}

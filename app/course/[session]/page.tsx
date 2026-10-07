@@ -3,8 +3,7 @@ import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
 import { getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
-import SessionPlayer from "@/components/SessionPlayer";
-import Prose from "@/components/Prose";
+import SessionCard from "@/components/SessionCard";
 
 export const dynamic = "force-dynamic";
 
@@ -52,55 +51,12 @@ export default async function SessionPage({
       <TopBar />
       <main className="page">
         <p><a className="back" href="/course">&larr; All sessions</a></p>
-        <div className="card">
-          <h1>{session.title}</h1>
-          <Prose text={session.description} className="session-intro" />
-          {session.youtubeId ? (
-            <SessionPlayer
-              session={session.number}
-              youtubeId={session.youtubeId}
-              alreadyCompleted={alreadyCompleted}
-              nextHref={isLast ? "/course" : `/course/${session.number + 1}`}
-              nextLabel={isLast ? "Back to sessions" : `Start Session ${session.number + 1}`}
-            />
-          ) : (
-            <p className="muted">This session's video isn't ready yet. Please check back soon.</p>
-          )}
-
-          {(session.notes || session.links.length > 0) && (
-            <section className="session-section">
-              <h2>Notes</h2>
-              <Prose text={session.notes} />
-              {session.links.length > 0 && (
-                <ul className="session-links">
-                  {session.links.map((l, i) => (
-                    <li key={i}>
-                      <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          )}
-
-          {session.formUrl && (
-            <section className="session-section">
-              <h2>{session.formTitle || "Next step"}</h2>
-              <p className="muted">
-                This form opens in Church Center. Sign in with your Planning Center login and
-                your information will be filled in for you.
-              </p>
-              <a
-                className="btn btn-dark"
-                href={session.formUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open The Form
-              </a>
-            </section>
-          )}
-        </div>
+        <SessionCard
+          session={session}
+          isLast={isLast}
+          alreadyCompleted={alreadyCompleted}
+          basePath="/course"
+        />
       </main>
     </>
   );

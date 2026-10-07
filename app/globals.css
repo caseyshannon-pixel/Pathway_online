@@ -372,3 +372,17 @@ h1, h2 {
   .dash-tiles { grid-template-columns: repeat(2, 1fr); }
   .dash-week-label:nth-child(even) { visibility: hidden; }
 }
+
+/* Admin session preview */
+.preview-banner {
+  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 20px; background: #eef4ff; border-bottom: 1px solid #c9dafc; color: #1b3a78; font-size: 0.9rem;
+}
+.preview-banner a { color: #2266f7; }
+.preview-banner > span { flex: 1; min-width: 200px; }
+.preview-chips { display: flex; gap: 6px; }
+.preview-chips a {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; text-decoration: none;
+  border: 1px solid #2266f7; font-weight: 600;
+}
+.preview-chips a.is-current { background: #2266f7; color: #fff; }
