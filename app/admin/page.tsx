@@ -27,6 +27,7 @@ export default async function Admin({
             <a className="btn btn-dark" href="/admin/dashboard">Dashboard</a>
             <a className="btn btn-dark" href="/admin/content">Edit session content</a>
             <a className="btn btn-dark" href="/admin/preview/1">Preview Sessions</a>
+            <a className="btn btn-dark" href="/admin/campuses">Campus Workflows</a>
             <a className="btn btn-dark" href="/admin/admins">Manage admins</a>
           </div>
           <h2>Move someone forward</h2>

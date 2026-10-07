@@ -29,7 +29,7 @@ function PersonRow({ c, detail }: { c: CardInfo; detail: string }) {
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string; session?: string }>;
+  searchParams: Promise<{ days?: string; session?: string; wf?: string }>;
 }) {
   const session = await getSession();
   if (!(await isAdmin(session))) notFound();
@@ -58,8 +58,11 @@ export default async function Dashboard({
     );
   }
 
-  const { total, titles, cards } = snapshot;
+  const { total, titles, workflows } = snapshot;
+  const wf = workflows.some((w) => w.id === params.wf) ? (params.wf as string) : "";
+  const cards = wf ? snapshot.cards.filter((c) => c.workflowId === wf) : snapshot.cards;
   const stats = buildStats(cards, titles, days);
+  const wfQuery = wf ? `&wf=${wf}` : "";
   const picked = Number(params.session);
   const detail = Number.isInteger(picked) && picked >= 1 && picked <= total ? picked : null;
   const maxWeek = Math.max(1, ...stats.weeks.map((w) => Math.max(w.joined, w.moved)));
@@ -76,6 +79,21 @@ export default async function Dashboard({
           </div>
           <p className="muted">Live from your Pathway workflow in Planning Center. Refreshes every minute.</p>
 
+          {workflows.length > 1 && (
+            <nav className="dash-filter" aria-label="Filter by campus">
+              <a href={`/admin/dashboard?days=${days}`} className={wf === "" ? "is-current" : undefined}>All</a>
+              {workflows.map((w) => (
+                <a
+                  key={w.id}
+                  href={`/admin/dashboard?wf=${w.id}&days=${days}`}
+                  className={wf === w.id ? "is-current" : undefined}
+                >
+                  {w.label}
+                </a>
+              ))}
+            </nav>
+          )}
+
           <div className="dash-tiles">
             <div className="dash-tile"><strong>{stats.started}</strong><span>Started</span></div>
             <div className="dash-tile"><strong>{stats.inProgress}</strong><span>In progress</span></div>
@@ -90,7 +108,7 @@ export default async function Dashboard({
               <li key={s.number}>
                 <a
                   className={`dash-session${detail === s.number ? " is-open" : ""}`}
-                  href={`/admin/dashboard?session=${s.number}&days=${days}#people`}
+                  href={`/admin/dashboard?session=${s.number}&days=${days}${wfQuery}#people`}
                 >
                   <span className="dash-session-title">{s.title}</span>
                   <span className="dash-bar" aria-hidden="true">
@@ -160,7 +178,7 @@ export default async function Dashboard({
                 {d === days ? (
                   <strong>{d} days</strong>
                 ) : (
-                  <a href={`/admin/dashboard?days=${d}${detail ? `&session=${detail}` : ""}`}>{d} days</a>
+                  <a href={`/admin/dashboard?days=${d}${detail ? `&session=${detail}` : ""}${wfQuery}`}>{d} days</a>
                 )}
               </span>
             ))}

@@ -72,3 +72,12 @@ export async function deletePublicJson(path: string) {
   const urls = blobs.filter((b) => b.pathname === path).map((b) => b.url);
   if (urls.length > 0) await del(urls);
 }
+
+/** Settings files: the private store when it is set up, otherwise the public one. */
+export async function readSecure(path: string): Promise<unknown | null> {
+  return privateStorageConfigured() ? readPrivateJson(path) : readJson(path);
+}
+
+export async function writeSecure(path: string, data: unknown) {
+  return privateStorageConfigured() ? writePrivateJson(path, data) : writeJson(path, data);
+}

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
-import { getProgress, type Progress } from "@/lib/pcoWorkflow";
+import { CampusRequiredError, getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +14,9 @@ export default async function Course() {
 
   let progress: Progress | null = null;
   try {
-    progress = await getProgress(session.personId);
+    progress = await getProgress(session.personId, { askCampus: true });
   } catch (err) {
+    if (err instanceof CampusRequiredError) redirect("/choose-campus");
     console.error("Could not load progress:", err);
   }
 

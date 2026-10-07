@@ -21,12 +21,14 @@ export async function GET() {
   if (!rateLimit(`admin-export:${session!.personId}`, 6, 60_000)) return tooMany();
 
   try {
-    const { total, cards } = await getWorkflowSnapshot();
-    const rows = [["Name", "Person ID", "Sessions finished", "Status", "Joined", "Last moved"]];
+    const { total, cards, workflows } = await getWorkflowSnapshot();
+    const campusOf = new Map(workflows.map((w) => [w.id, w.label]));
+    const rows = [["Name", "Person ID", "Campus workflow", "Sessions finished", "Status", "Joined", "Last moved"]];
     for (const c of cards) {
       rows.push([
         c.name,
         c.personId,
+        campusOf.get(c.workflowId) ?? "",
         `${c.completed} of ${total}`,
         c.completed >= total ? "Completed" : "In progress",
         day(c.createdAt),

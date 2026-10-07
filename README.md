@@ -32,6 +32,14 @@ the card to the next step. The order matters; the names are only for your team.
 
 Edit `lib/course.ts` and paste each YouTube video ID (the part after `v=`).
 
+## Campus workflows
+
+Each campus can have its own Pathway workflow (Admin > Campus Workflows). A new person starts in the
+workflow for their Primary Campus in Planning Center; if they have none, they choose a campus in the app
+(saved in the app, not written back to Planning Center, which doesn't allow it through its API).
+Campuses without a workflow use the original one (`PATHWAY_WORKFLOW_ID`). Anyone who already has a card
+keeps it. Every workflow needs one step per session plus a final "Completed" step.
+
 ## Security notes
 
 - Secrets live only in Vercel environment variables. `.env*` files are git-ignored; never commit one.

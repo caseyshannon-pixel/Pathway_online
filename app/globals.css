@@ -386,3 +386,18 @@ h1, h2 {
   border: 1px solid #2266f7; font-weight: 600;
 }
 .preview-chips a.is-current { background: #2266f7; color: #fff; }
+
+/* Campus picker */
+.campus-choices { display: grid; gap: 10px; margin-top: 16px; }
+.campus-choices .btn { width: 100%; }
+
+.dash-filter { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 0; }
+.dash-filter a {
+  padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--text); text-decoration: none; font-size: 0.9rem;
+}
+.dash-filter a.is-current { background: #2266f7; border-color: #2266f7; color: #fff; }
+.field select {
+  font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--text); width: 100%;
+}
