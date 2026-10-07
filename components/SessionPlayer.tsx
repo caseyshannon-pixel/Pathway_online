@@ -51,6 +51,8 @@ export default function SessionPlayer({
   const mountRef = useRef<HTMLDivElement>(null);
   const [done, setDone] = useState(alreadyCompleted);
   const [message, setMessage] = useState<string | null>(null);
+  const [problem, setProblem] = useState<"none" | "retry" | "signin">("none");
+  const finishRef = useRef<() => void>(undefined);
 
   useEffect(() => {
     let player: any = null;
@@ -81,6 +83,7 @@ export default function SessionPlayer({
       }).catch(() => undefined);
 
     async function finish() {
+      setProblem("none");
       if (preview) {
         setMessage(null);
         setDone(true);
@@ -102,6 +105,11 @@ export default function SessionPlayer({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ session }),
         });
+        if (res.status === 401) {
+          setMessage("Your sign-in expired, so this session couldn't be saved. Sign in again and watch it once more.");
+          setProblem("signin");
+          return;
+        }
         if (res.status === 400) {
           const body = (await res.json().catch(() => ({}))) as { error?: string };
           if (body.error === "not_watched") {
@@ -113,9 +121,11 @@ export default function SessionPlayer({
         setMessage(null);
         setDone(true);
       } catch {
-        setMessage("We couldn't save your progress. Check your connection and replay the last few seconds to try again.");
+        setMessage("We couldn't save your progress. Please check your connection and try again.");
+        setProblem("retry");
       }
     }
+    finishRef.current = () => void finish();
 
     loadYouTubeApi().then((YT) => {
       if (cancelled || !mountRef.current) return;
@@ -163,6 +173,16 @@ export default function SessionPlayer({
     <div>
       <div className="player-wrap" ref={mountRef} />
       {message && <p className="notice" role="alert">{message}</p>}
+      {problem === "retry" && (
+        <button type="button" className="btn" onClick={() => finishRef.current?.()}>
+          Try Again
+        </button>
+      )}
+      {problem === "signin" && (
+        <a className="btn" href={`/api/auth/login?next=${encodeURIComponent(`/course/${session}`)}`}>
+          Sign In Again
+        </a>
+      )}
       {done && (
         <div className="done-banner" role="status">
           <strong>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { appOrigin, exchangeCode, fetchMe } from "@/lib/pco";
 import { createSession } from "@/lib/session";
+import { safeNext } from "@/lib/nextPath";
 
 export const dynamic = "force-dynamic";
 
@@ -30,5 +31,7 @@ export async function GET(req: NextRequest) {
     return fail("signin");
   }
 
-  return NextResponse.redirect(new URL("/course", origin));
+  const next = safeNext(jar.get("pathway_next")?.value) ?? "/course";
+  jar.delete("pathway_next");
+  return NextResponse.redirect(new URL(next, origin));
 }

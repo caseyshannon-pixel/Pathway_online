@@ -17,9 +17,19 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const rawHelp = process.env.HELP_EMAIL?.trim() ?? "";
+  const helpEmail = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(rawHelp) ? rawHelp : "";
+
   return (
     <html lang="en" className={`${archivo.variable} ${archivoBlack.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        {helpEmail && (
+          <footer className="site-footer">
+            Need help? <a href={`mailto:${helpEmail}`}>Email {helpEmail}</a>
+          </footer>
+        )}
+      </body>
     </html>
   );
 }

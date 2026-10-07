@@ -73,7 +73,12 @@ export default async function Course() {
                   <span className={`chapter-num${isDone ? " is-done" : ""}`}>
                     {isDone ? "✓" : s.number}
                   </span>
-                  <span className="chapter-title">{s.title}</span>
+                  <span className="chapter-title">
+                    {s.title}
+                    {!open && progress !== null && (
+                      <small className="chapter-hint">Finish session {s.number - 1} first</small>
+                    )}
+                  </span>
                   <span className={`status status-${isDone ? "done" : isNext ? "next" : "locked"}`}>
                     {status}
                   </span>

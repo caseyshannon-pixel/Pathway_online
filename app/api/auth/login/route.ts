@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { appOrigin, buildAuthorizeUrl } from "@/lib/pco";
 import { clientIp, rateLimit, tooMany } from "@/lib/security";
+import { safeNext } from "@/lib/nextPath";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,17 @@ export async function GET(req: NextRequest) {
     path: "/",
     maxAge: 600,
   });
+
+  const next = safeNext(req.nextUrl.searchParams.get("next"));
+  if (next) {
+    jar.set("pathway_next", next, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 600,
+    });
+  }
 
   return NextResponse.redirect(buildAuthorizeUrl(origin, state));
 }

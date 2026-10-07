@@ -12,11 +12,11 @@ export default async function SessionPage({
 }: {
   params: Promise<{ session: string }>;
 }) {
-  const user = await getSession();
-  if (!user) redirect("/");
-
   const { session: raw } = await params;
   const number = Number(raw);
+
+  const user = await getSession();
+  if (!user) redirect(`/?next=${encodeURIComponent(`/course/${Number.isInteger(number) ? number : ""}`)}`);
   const sessions = await getSessions();
   const session = sessions.find((s) => s.number === number);
   if (!session) notFound();

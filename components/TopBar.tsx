@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/session";
 import { isAdmin } from "@/lib/admin";
+import AccountMenu from "./AccountMenu";
 
 export default async function TopBar() {
   const session = await getSession();
@@ -11,16 +12,7 @@ export default async function TopBar() {
         <a className="brand" href="/course">Pathway Online</a>
         <div className="topbar-right">
           {(await isAdmin(session)) && <a className="back" href="/admin">Admin</a>}
-          <form action="/api/auth/logout" method="post">
-          <button className="avatar-btn" type="submit" aria-label="Sign out" title="Sign out">
-            {session?.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={session.avatar} alt="" referrerPolicy="no-referrer" />
-            ) : (
-              <span aria-hidden="true">{initial}</span>
-            )}
-          </button>
-          </form>
+          <AccountMenu name={session?.name ?? ""} avatar={session?.avatar ?? ""} initial={initial} />
         </div>
       </div>
     </header>
