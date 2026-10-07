@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
+import { forbidden, rateLimit, sameOrigin, tooMany } from "@/lib/security";
 import { completeSession } from "@/lib/pcoWorkflow";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  if (!sameOrigin(req)) return forbidden();
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  if (!rateLimit(`progress:${session.personId}`, 20, 60_000)) return tooMany();
 
   let number = 0;
   try {

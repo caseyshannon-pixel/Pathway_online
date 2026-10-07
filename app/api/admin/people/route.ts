@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { isAdmin } from "@/lib/admin";
+import { rateLimit, tooMany } from "@/lib/security";
 import { getProgressMany, searchPeople } from "@/lib/pcoWorkflow";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!(await isAdmin(session))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+
+  if (!rateLimit(`admin-search:${session!.personId}`, 90, 60_000)) return tooMany();
 
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim().slice(0, 100);
   const withProgress = req.nextUrl.searchParams.get("mode") === "advance";

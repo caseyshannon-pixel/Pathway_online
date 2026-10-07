@@ -1,0 +1,17 @@
+# dependencies and build output
+node_modules/
+.next/
+out/
+
+# secrets and local config: never commit these
+.env
+.env.*
+!.env.example
+.vercel/
+
+# local tooling
+.claude/
+.DS_Store
+*.log
+*.tsbuildinfo
+next-env.d.ts

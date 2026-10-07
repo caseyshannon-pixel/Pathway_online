@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { appOrigin } from "@/lib/pco";
 import { getSession } from "@/lib/session";
 import { getAddedAdmins, isAdmin, ownerIds, saveAddedAdmins } from "@/lib/admin";
+import { forbidden, rateLimit, sameOrigin, tooMany } from "@/lib/security";
 import { getPersonName } from "@/lib/pcoWorkflow";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  if (!sameOrigin(req)) return forbidden();
   const session = await getSession();
   if (!(await isAdmin(session))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  if (!rateLimit(`admin-admins:${session!.personId}`, 30, 60_000)) return tooMany();
 
   const form = await req.formData();
   const action = String(form.get("action") ?? "");

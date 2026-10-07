@@ -41,7 +41,8 @@ export async function getSession(): Promise<Session | null> {
   const token = jar.get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, key());
+    const { payload } = await jwtVerify(token, key(), { algorithms: ["HS256"] });
+    if (!/^\d+$/.test(String(payload.personId))) return null;
     return {
       personId: String(payload.personId),
       name: String(payload.name),

@@ -8,6 +8,7 @@ const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400", variable
 export const metadata: Metadata = {
   title: "Pathway Online",
   description: "The Rock's Pathway course, online.",
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { isAdmin } from "@/lib/admin";
+import { rateLimit, tooMany } from "@/lib/security";
 import { getWorkflowSnapshot } from "@/lib/pcoWorkflow";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,8 @@ const day = (iso: string) => (iso ? iso.slice(0, 10) : "");
 export async function GET() {
   const session = await getSession();
   if (!(await isAdmin(session))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+
+  if (!rateLimit(`admin-export:${session!.personId}`, 6, 60_000)) return tooMany();
 
   try {
     const { total, cards } = await getWorkflowSnapshot();

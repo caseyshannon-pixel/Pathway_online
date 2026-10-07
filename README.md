@@ -31,3 +31,12 @@ the card to the next step. The order matters; the names are only for your team.
 ## Adding videos
 
 Edit `lib/course.ts` and paste each YouTube video ID (the part after `v=`).
+
+## Security notes
+
+- Secrets live only in Vercel environment variables. `.env*` files are git-ignored; never commit one.
+- `SESSION_SECRET` should be a long random string (32+ characters). Changing it signs everyone out.
+- Admins are the Planning Center person ids in `ADMIN_PERSON_IDS` (owners, only changeable in Vercel) plus anyone added on the Admin > Manage admins page.
+- Every response carries security headers (see `next.config.mjs`). Admin actions also check that the request came from this site (`lib/security.ts`) and are rate limited per person.
+- Session progress is reported by the browser when a video ends, so a determined signed-in person could mark a session finished without watching it. Treat completions as honor-system, not proof.
+- The list of added admins is stored in a public Blob file (names and person ids only; it does not grant access).

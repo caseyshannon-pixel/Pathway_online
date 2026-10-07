@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { appOrigin, buildAuthorizeUrl } from "@/lib/pco";
+import { clientIp, rateLimit, tooMany } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  if (!rateLimit(`login:${clientIp(req)}`, 30, 60_000)) return tooMany();
   const origin = appOrigin(req.nextUrl.origin);
   const state = randomBytes(16).toString("hex");
 

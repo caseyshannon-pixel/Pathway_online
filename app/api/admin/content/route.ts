@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { isAdmin } from "@/lib/admin";
+import { forbidden, rateLimit, sameOrigin, tooMany } from "@/lib/security";
 import { saveSessions, validateSessions } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
 export async function PUT(req: NextRequest) {
+  if (!sameOrigin(req)) return forbidden();
   const session = await getSession();
   if (!(await isAdmin(session))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  if (!rateLimit(`admin-content:${session!.personId}`, 30, 60_000)) return tooMany();
 
   let body: { sessions?: unknown };
   try {
