@@ -370,7 +370,7 @@ export default function SessionPlayer({
             disabled={!ready || !duration}
             aria-label="Seek"
             aria-valuetext={`${formatTime(shown)} of ${formatTime(duration)}`}
-            style={{ "--pct": `${duration ? (shown / duration) * 100 : 0}%` } as React.CSSProperties}
+            style={{ ["--pct" as string]: `${duration ? (shown / duration) * 100 : 0}%` }}
             onChange={(e) => setScrub(Number(e.target.value))}
             onPointerUp={commitSeek}
             onKeyUp={commitSeek}
