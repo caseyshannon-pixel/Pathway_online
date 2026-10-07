@@ -5,6 +5,26 @@ import type { Session } from "@/lib/course";
 
 const MAX_SESSIONS = 20;
 
+// Shrinks a picked image to at most 1280px wide (JPEG) so it uploads quickly and stays under the size limit.
+async function shrinkImage(file: File): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1280 / bitmap.width);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    return blob ?? file;
+  } catch {
+    return file;
+  }
+}
+
 const emptySession = (): Session => ({
   number: 0,
   title: "",
@@ -15,12 +35,33 @@ const emptySession = (): Session => ({
   formUrl: "",
   formTitle: "",
   lengthSeconds: 0,
+  thumbnailUrl: "",
 });
 
 export default function ContentEditor({ initial }: { initial: Session[] }) {
   const [sessions, setSessions] = useState<Session[]>(initial);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [uploading, setUploading] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<{ i: number; text: string } | null>(null);
+
+  async function uploadThumbnail(i: number, file: File) {
+    setUploading(i);
+    setUploadError(null);
+    try {
+      const small = await shrinkImage(file);
+      const form = new FormData();
+      form.append("file", small, "thumbnail.jpg");
+      const res = await fetch("/api/admin/thumbnail", { method: "POST", body: form });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
+      update(i, { thumbnailUrl: json.url });
+    } catch (err) {
+      setUploadError({ i, text: err instanceof Error ? err.message : "Upload failed." });
+    } finally {
+      setUploading(null);
+    }
+  }
 
   const update = (i: number, patch: Partial<Session>) => {
     setMessage(null);
@@ -95,6 +136,40 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
               />
               <small className="muted">Leave empty to show "coming soon".</small>
             </label>
+
+            <div className="field">
+              <span>Thumbnail (optional)</span>
+              {s.thumbnailUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="thumb-preview" src={s.thumbnailUrl} alt={`Thumbnail for ${s.title || `session ${i + 1}`}`} />
+              )}
+              <div className="thumb-actions">
+                <label className="btn btn-secondary thumb-upload">
+                  {uploading === i ? "Uploading…" : s.thumbnailUrl ? "Replace Thumbnail" : "Upload Thumbnail"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                    disabled={uploading !== null}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) void uploadThumbnail(i, file);
+                    }}
+                  />
+                </label>
+                {s.thumbnailUrl && (
+                  <button type="button" className="link-btn danger" onClick={() => update(i, { thumbnailUrl: "" })}>
+                    Remove
+                  </button>
+                )}
+              </div>
+              {uploadError?.i === i && <small className="notice">{uploadError.text}</small>}
+              <small className="muted">
+                Shown over the video until someone presses play. A 16:9 picture (like 1280×720) fits best.
+                Click Save changes below to publish it.
+              </small>
+            </div>
 
             <label className="field">
               <span>Video length in minutes (optional)</span>

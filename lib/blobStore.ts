@@ -81,3 +81,14 @@ export async function readSecure(path: string): Promise<unknown | null> {
 export async function writeSecure(path: string, data: unknown) {
   return privateStorageConfigured() ? writePrivateJson(path, data) : writeJson(path, data);
 }
+
+/** Stores an image in the public store under a random name and returns its URL. */
+export async function putPublicImage(path: string, body: Uint8Array, contentType: string) {
+  if (!storageConfigured()) throw new Error("STORAGE_NOT_SET_UP");
+  const blob = await put(path, Buffer.from(body), {
+    access: "public",
+    contentType,
+    addRandomSuffix: true,
+  });
+  return blob.url;
+}

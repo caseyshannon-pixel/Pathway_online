@@ -27,6 +27,7 @@ export default function SessionCard({
           session={session.number}
           youtubeId={session.youtubeId}
           alreadyCompleted={alreadyCompleted}
+          thumbnailUrl={session.thumbnailUrl}
           nextHref={isLast ? basePath : `${basePath}/${session.number + 1}`}
           nextLabel={isLast ? "Back to sessions" : `Start Session ${session.number + 1}`}
           preview={preview}

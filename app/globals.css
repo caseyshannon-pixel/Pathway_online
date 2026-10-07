@@ -420,3 +420,20 @@ h1, h2 {
   font: inherit; color: var(--text); cursor: pointer;
 }
 .account-signout:hover, .account-signout:focus-visible { background: #f4f2f0; }
+
+/* Video thumbnail poster and the editor's upload control */
+.poster {
+  position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: pointer;
+  background: #000; display: block;
+}
+.poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.poster-play {
+  position: absolute; left: 50%; top: 50%; width: 72px; height: 72px; margin: -36px 0 0 -36px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--accent); color: #fff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35); transition: transform 0.15s;
+}
+.poster:hover .poster-play, .poster:focus-visible .poster-play { transform: scale(1.08); }
+.poster:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.thumb-preview { width: 100%; max-width: 320px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.thumb-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.thumb-upload { cursor: pointer; }

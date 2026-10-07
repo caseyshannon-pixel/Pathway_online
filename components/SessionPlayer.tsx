@@ -18,6 +18,8 @@ type Props = {
   nextLabel: string;
   /** Admin preview: play normally, but never record anything. */
   preview?: boolean;
+  /** Picture shown over the video until someone presses play. */
+  thumbnailUrl?: string;
 };
 
 // A session only counts if at least this much of the video was actually played.
@@ -47,14 +49,18 @@ export default function SessionPlayer({
   nextHref,
   nextLabel,
   preview = false,
+  thumbnailUrl = "",
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [done, setDone] = useState(alreadyCompleted);
   const [message, setMessage] = useState<string | null>(null);
   const [problem, setProblem] = useState<"none" | "retry" | "signin">("none");
   const finishRef = useRef<() => void>(undefined);
+  // With a thumbnail, YouTube's player only loads once someone presses play.
+  const [started, setStarted] = useState(!thumbnailUrl);
 
   useEffect(() => {
+    if (!started) return;
     let player: any = null;
     let timer: ReturnType<typeof setInterval> | null = null;
     let beatTimer: ReturnType<typeof setInterval> | null = null;
@@ -136,7 +142,7 @@ export default function SessionPlayer({
         videoId: youtubeId,
         width: "100%",
         height: "100%",
-        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1, autoplay: thumbnailUrl ? 1 : 0 },
         events: {
           onStateChange: (e: any) => {
             const S = YT.PlayerState;
@@ -167,11 +173,28 @@ export default function SessionPlayer({
         /* player already gone */
       }
     };
-  }, [session, youtubeId, alreadyCompleted, preview]);
+  }, [session, youtubeId, alreadyCompleted, preview, started, thumbnailUrl]);
 
   return (
     <div>
-      <div className="player-wrap" ref={mountRef} />
+      <div className="player-wrap" ref={mountRef}>
+        {!started && (
+          <button
+            type="button"
+            className="poster"
+            onClick={() => setStarted(true)}
+            aria-label="Play video"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={thumbnailUrl} alt="" onError={() => setStarted(true)} />
+            <span className="poster-play" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+          </button>
+        )}
+      </div>
       {message && <p className="notice" role="alert">{message}</p>}
       {problem === "retry" && (
         <button type="button" className="btn" onClick={() => finishRef.current?.()}>

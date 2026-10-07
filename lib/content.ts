@@ -82,6 +82,23 @@ export function validateSessions(input: unknown): Validated {
       };
     }
 
+    // Thumbnails must be ones uploaded through the editor (they live in our Blob store).
+    const thumbText = str(raw.thumbnailUrl, 500);
+    let thumbnailUrl = "";
+    if (thumbText) {
+      try {
+        const u = new URL(thumbText);
+        if (u.protocol === "https:" && u.hostname.endsWith(".public.blob.vercel-storage.com")) {
+          thumbnailUrl = u.toString();
+        }
+      } catch {
+        /* invalid */
+      }
+      if (!thumbnailUrl) {
+        return { ok: false, error: `Session ${n}: the thumbnail must be uploaded with the Upload button.` };
+      }
+    }
+
     const rawLength = Number(raw.lengthSeconds);
     const lengthSeconds =
       Number.isFinite(rawLength) && rawLength > 0 ? Math.min(Math.round(rawLength), 36_000) : 0;
@@ -112,6 +129,7 @@ export function validateSessions(input: unknown): Validated {
       formUrl,
       formTitle: str(raw.formTitle, 100),
       lengthSeconds,
+      thumbnailUrl,
     });
   }
   return { ok: true, sessions };
