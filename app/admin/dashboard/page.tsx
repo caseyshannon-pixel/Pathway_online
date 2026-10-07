@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { isAdmin } from "@/lib/admin";
+import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
 import { getWorkflowSnapshot, type CardInfo } from "@/lib/pcoWorkflow";
 import { buildStats } from "@/lib/dashboard";
 import TopBar from "@/components/TopBar";
@@ -29,7 +29,7 @@ function PersonRow({ c, detail }: { c: CardInfo; detail: string }) {
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string; session?: string; wf?: string }>;
+  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string }>;
 }) {
   const session = await getSession();
   if (!(await isAdmin(session))) notFound();
@@ -60,9 +60,15 @@ export default async function Dashboard({
 
   const { total, titles, workflows } = snapshot;
   const wf = workflows.some((w) => w.id === params.wf) ? (params.wf as string) : "";
-  const cards = wf ? snapshot.cards.filter((c) => c.workflowId === wf) : snapshot.cards;
+  // Admins' own cards are mostly test runs, so they're left out unless asked for.
+  const showAdmins = params.admins === "1";
+  const adminIds = new Set([...ownerIds(), ...(await getAddedAdmins()).map((a) => a.id)]);
+  const visible = showAdmins ? snapshot.cards : snapshot.cards.filter((c) => !adminIds.has(c.personId));
+  const hiddenCount = snapshot.cards.length - visible.length;
+  const cards = wf ? visible.filter((c) => c.workflowId === wf) : visible;
+  const adminQuery = showAdmins ? "&admins=1" : "";
   const stats = buildStats(cards, titles, days);
-  const wfQuery = wf ? `&wf=${wf}` : "";
+  const wfQuery = (wf ? `&wf=${wf}` : "") + adminQuery;
   const picked = Number(params.session);
   const detail = Number.isInteger(picked) && picked >= 1 && picked <= total ? picked : null;
   const maxWeek = Math.max(1, ...stats.weeks.map((w) => Math.max(w.joined, w.moved)));
@@ -75,17 +81,30 @@ export default async function Dashboard({
         <div className="card">
           <div className="dash-head">
             <h1>Dashboard</h1>
-            <a className="btn btn-dark" href="/api/admin/export">Download Spreadsheet</a>
+            <a className="btn btn-dark" href={`/api/admin/export${showAdmins ? "?admins=1" : ""}`}>Download Spreadsheet</a>
           </div>
           <p className="muted">Live from your Pathway workflow in Planning Center. Refreshes every minute.</p>
+          <p className="muted">
+            {showAdmins ? (
+              <>
+                Including admins.{" "}
+                <a href={`/admin/dashboard?days=${days}${wf ? `&wf=${wf}` : ""}`}>Hide admins</a>
+              </>
+            ) : (
+              <>
+                Admins are hidden{hiddenCount > 0 ? ` (${hiddenCount} left out)` : ""}.{" "}
+                <a href={`/admin/dashboard?days=${days}${wf ? `&wf=${wf}` : ""}&admins=1`}>Show admins</a>
+              </>
+            )}
+          </p>
 
           {workflows.length > 1 && (
             <nav className="dash-filter" aria-label="Filter by campus">
-              <a href={`/admin/dashboard?days=${days}`} className={wf === "" ? "is-current" : undefined}>All</a>
+              <a href={`/admin/dashboard?days=${days}${adminQuery}`} className={wf === "" ? "is-current" : undefined}>All</a>
               {workflows.map((w) => (
                 <a
                   key={w.id}
-                  href={`/admin/dashboard?wf=${w.id}&days=${days}`}
+                  href={`/admin/dashboard?wf=${w.id}&days=${days}${adminQuery}`}
                   className={wf === w.id ? "is-current" : undefined}
                 >
                   {w.label}

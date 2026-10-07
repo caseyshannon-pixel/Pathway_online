@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { isAdmin } from "@/lib/admin";
+import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
 import { rateLimit, tooMany } from "@/lib/security";
 import { getWorkflowSnapshot } from "@/lib/pcoWorkflow";
 
@@ -14,7 +14,7 @@ function cell(value: string) {
 
 const day = (iso: string) => (iso ? iso.slice(0, 10) : "");
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!(await isAdmin(session))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
@@ -23,8 +23,12 @@ export async function GET() {
   try {
     const { total, cards, workflows } = await getWorkflowSnapshot();
     const campusOf = new Map(workflows.map((w) => [w.id, w.label]));
+    // Same rule as the dashboard: admins' own cards are left out unless ?admins=1.
+    const includeAdmins = req.nextUrl.searchParams.get("admins") === "1";
+    const adminIds = new Set([...ownerIds(), ...(await getAddedAdmins()).map((a) => a.id)]);
+    const people = includeAdmins ? cards : cards.filter((c) => !adminIds.has(c.personId));
     const rows = [["Name", "Person ID", "Campus workflow", "Sessions finished", "Status", "Joined", "Last moved"]];
-    for (const c of cards) {
+    for (const c of people) {
       rows.push([
         c.name,
         c.personId,
