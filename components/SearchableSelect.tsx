@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 export type Option = { value: string; label: string };
 
@@ -37,6 +37,11 @@ export default function SearchableSelect({
     const q = text.trim().toLowerCase();
     return typed && q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
   }, [options, text, typed]);
+
+  // Keep the highlighted option in view when arrow keys move it (or the list first opens).
+  useEffect(() => {
+    if (open) document.getElementById(`${uid}-opt-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [open, active, uid]);
 
   const choose = (o: Option) => {
     setValue(o.value);
@@ -104,7 +109,15 @@ export default function SearchableSelect({
           onKeyDown={onKeyDown}
         />
         {open && (
-          <ul className="ss-list" id={listId} role="listbox" aria-labelledby={labelId}>
+          <ul
+            className="ss-list"
+            id={listId}
+            role="listbox"
+            aria-labelledby={labelId}
+            // Pressing anywhere in the list (including its scrollbar) must not take focus
+            // from the search box, or the list would close before it could scroll.
+            onMouseDown={(e) => e.preventDefault()}
+          >
             {shown.length === 0 && <li className="ss-empty">No workflows match "{text.trim()}"</li>}
             {shown.map((o, i) => (
               <li
@@ -118,7 +131,10 @@ export default function SearchableSelect({
                   e.preventDefault();
                   choose(o);
                 }}
-                onMouseEnter={() => setActive(i)}
+                // mousemove, not mouseenter: scrolling under a still pointer mustn't change the highlight
+                onMouseMove={() => {
+                  if (i !== active) setActive(i);
+                }}
               >
                 {o.label}
               </li>
