@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Session } from "@/lib/course";
 import { shrinkImage } from "@/lib/shrinkImage";
 
@@ -61,12 +61,28 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
     });
   };
 
-  const remove = (i: number) => {
-    const name = sessions[i].title || `Session ${i + 1}`;
-    if (!window.confirm(`Remove "${name}"? Remember to also remove a step from your Planning Center workflow.`)) return;
+  // Removing asks first, in a pop-up. Nothing is deleted until the person confirms,
+  // and even then it only becomes permanent when they click Save changes.
+  const [pendingRemove, setPendingRemove] = useState<number | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (pendingRemove !== null && !dialog.open) dialog.showModal();
+    if (pendingRemove === null && dialog.open) dialog.close();
+  }, [pendingRemove]);
+
+  const confirmRemove = () => {
+    if (pendingRemove === null) return;
+    const index = pendingRemove;
+    setPendingRemove(null);
     setMessage(null);
-    setSessions((all) => all.filter((_, j) => j !== i));
+    setSessions((all) => all.filter((_, j) => j !== index));
   };
+
+  const pendingName =
+    pendingRemove !== null ? sessions[pendingRemove]?.title || `Session ${pendingRemove + 1}` : "";
 
   const add = () => {
     setMessage(null);
@@ -324,7 +340,7 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
               >
                 Move down
               </button>
-              <button type="button" className="link-btn danger" onClick={() => remove(i)} disabled={sessions.length <= 1}>
+              <button type="button" className="link-btn danger" onClick={() => setPendingRemove(i)} disabled={sessions.length <= 1}>
                 Remove session
               </button>
             </div>
@@ -347,6 +363,33 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
           {saving ? "Saving…" : "Save changes"}
         </button>
       </div>
+
+      <dialog
+        ref={dialogRef}
+        className="confirm-dialog"
+        aria-labelledby="confirm-remove-title"
+        aria-describedby="confirm-remove-text"
+        onClose={() => setPendingRemove(null)}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setPendingRemove(null); // clicking the dimmed background cancels
+        }}
+      >
+        <h2 id="confirm-remove-title">Are you sure?</h2>
+        <p id="confirm-remove-text">
+          You're about to remove <strong>{pendingName}</strong>. Its video, notes, links and forms will go
+          when you save. Remember to also remove a step from your Planning Center workflow so the steps
+          still match.
+        </p>
+        <p className="muted">Nothing is deleted for good until you click Save changes.</p>
+        <div className="confirm-actions">
+          <button type="button" className="btn btn-secondary" autoFocus onClick={() => setPendingRemove(null)}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-danger" onClick={confirmRemove}>
+            Yes, Remove Session
+          </button>
+        </div>
+      </dialog>
 
       <div aria-live="polite">
         {message && (
