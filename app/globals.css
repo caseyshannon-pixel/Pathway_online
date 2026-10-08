@@ -539,3 +539,12 @@ h1, h2 {
 .signin-logo { display: block; max-height: 44px; width: auto; max-width: 70%; margin: 0 auto 14px; }
 .done-after { flex-basis: 100%; margin: 4px 0 0; }
 .done-after p { margin: 0 0 8px; color: var(--text); }
+
+/* Each form in the session editor */
+.form-card {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; margin-bottom: 10px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--bg);
+}
+.form-card-link, .form-card-remove { grid-column: 1 / -1; }
+.form-card-remove { justify-self: start; margin-left: 0; }
+@media (max-width: 560px) { .form-card { grid-template-columns: 1fr; } }

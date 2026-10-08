@@ -67,7 +67,7 @@ export default function SessionCard({
             </p>
           )}
           <a className="btn btn-dark" href={form.url} target="_blank" rel="noopener noreferrer">
-            Open The Form
+            {form.buttonLabel || "Open The Form"}
           </a>
         </section>
       ))}

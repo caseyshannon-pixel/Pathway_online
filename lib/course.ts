@@ -7,7 +7,13 @@
 
 export type SessionLink = { label: string; url: string };
 
-export type SessionForm = { title: string; url: string };
+export type SessionForm = {
+  /** Heading above the button. */
+  title: string;
+  url: string;
+  /** Text on the button. Empty = "Open The Form". */
+  buttonLabel: string;
+};
 
 export type Session = {
   number: number;

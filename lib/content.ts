@@ -93,7 +93,7 @@ export function validateSessions(input: unknown): Validated {
           error: `Session ${n}: each form needs a Church Center form link, like https://yourchurch.churchcenter.com/people/forms/123.`,
         };
       }
-      forms.push({ title, url });
+      forms.push({ title, url, buttonLabel: str(f?.buttonLabel, 40) });
     }
 
     // Thumbnails must be ones uploaded through the editor (they live in our Blob store).

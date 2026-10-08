@@ -251,31 +251,46 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
             <fieldset className="field">
               <legend>Church Center forms (optional)</legend>
               {s.forms.map((f, k) => (
-                <div className="link-row" key={k}>
-                  <input
-                    aria-label={`Form ${k + 1} heading`}
-                    placeholder="Heading, like Next step"
-                    maxLength={100}
-                    value={f.title}
-                    onChange={(e) =>
-                      update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, title: e.target.value } : x)) })
-                    }
-                  />
-                  <input
-                    aria-label={`Form ${k + 1} link`}
-                    placeholder="https://yourchurch.churchcenter.com/people/forms/123"
-                    value={f.url}
-                    onChange={(e) =>
-                      update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, url: e.target.value } : x)) })
-                    }
-                  />
+                <div className="form-card" key={k}>
+                  <label className="field">
+                    <span>Heading</span>
+                    <input
+                      placeholder="For example: Next step"
+                      maxLength={100}
+                      value={f.title}
+                      onChange={(e) =>
+                        update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, title: e.target.value } : x)) })
+                      }
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Button text</span>
+                    <input
+                      placeholder="Open The Form"
+                      maxLength={40}
+                      value={f.buttonLabel}
+                      onChange={(e) =>
+                        update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, buttonLabel: e.target.value } : x)) })
+                      }
+                    />
+                  </label>
+                  <label className="field form-card-link">
+                    <span>Form link</span>
+                    <input
+                      placeholder="https://yourchurch.churchcenter.com/people/forms/123"
+                      value={f.url}
+                      onChange={(e) =>
+                        update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, url: e.target.value } : x)) })
+                      }
+                    />
+                  </label>
                   <button
                     type="button"
-                    className="link-btn"
+                    className="link-btn danger form-card-remove"
                     aria-label={`Remove form ${k + 1}`}
                     onClick={() => update(i, { forms: s.forms.filter((_, m) => m !== k) })}
                   >
-                    Remove
+                    Remove this form
                   </button>
                 </div>
               ))}
@@ -283,7 +298,7 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                 <button
                   type="button"
                   className="link-btn"
-                  onClick={() => update(i, { forms: [...s.forms, { title: "", url: "" }] })}
+                  onClick={() => update(i, { forms: [...s.forms, { title: "", url: "", buttonLabel: "" }] })}
                 >
                   + Add a form
                 </button>
