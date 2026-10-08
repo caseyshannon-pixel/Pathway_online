@@ -6,6 +6,7 @@ import { getCampusMap } from "@/lib/campusConfig";
 import { privateStorageConfigured, storageConfigured } from "@/lib/blobStore";
 import { defaultWorkflowId, listCampuses, listWorkflows } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
+import SearchableSelect from "@/components/SearchableSelect";
 
 export const dynamic = "force-dynamic";
 
@@ -62,23 +63,23 @@ export default async function AdminCampuses({
                 const chosen = loaded!.map[c.id] ?? "";
                 const wf = loaded!.workflows.find((w) => w.id === chosen);
                 return (
-                  <label className="field" key={c.id}>
-                    <span>{c.name}</span>
-                    <select name={`campus_${c.id}`} defaultValue={chosen}>
-                      <option value="">Original Pathway workflow</option>
-                      {loaded!.workflows.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name} ({w.steps} steps)
-                        </option>
-                      ))}
-                    </select>
+                  <SearchableSelect
+                    key={c.id}
+                    name={`campus_${c.id}`}
+                    label={c.name}
+                    defaultValue={chosen}
+                    options={[
+                      { value: "", label: "Original Pathway workflow" },
+                      ...loaded!.workflows.map((w) => ({ value: w.id, label: `${w.name} (${w.steps} steps)` })),
+                    ]}
+                  >
                     {wf && wf.steps !== loaded!.expected && (
                       <small className="notice">
                         This workflow has {wf.steps} steps but Pathway needs {loaded!.expected}.
                         Progress will be wrong until they match.
                       </small>
                     )}
-                  </label>
+                  </SearchableSelect>
                 );
               })}
               <p className="muted">
