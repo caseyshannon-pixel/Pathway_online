@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Prose from "./Prose";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -20,10 +21,15 @@ type Props = {
   preview?: boolean;
   /** Picture shown over the video until someone presses play. */
   thumbnailUrl?: string;
+  /** Shown in the completion banner (what happens next). */
+  afterText?: string;
 };
 
 // A session only counts if at least this much of the video was actually played.
 const REQUIRED_FRACTION = 0.85;
+
+const SKIPPED_MESSAGE =
+  "It looks like part of the video was skipped. Replay it from the start to finish this session.";
 
 function loadYouTubeApi(): Promise<any> {
   return new Promise((resolve) => {
@@ -50,10 +56,13 @@ export default function SessionPlayer({
   nextLabel,
   preview = false,
   thumbnailUrl = "",
+  afterText = "",
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [done, setDone] = useState(alreadyCompleted);
   const [message, setMessage] = useState<string | null>(null);
+  // "info" is a gentle nudge (amber); "error" is a real problem (red).
+  const [tone, setTone] = useState<"info" | "error">("error");
   const [problem, setProblem] = useState<"none" | "retry" | "signin">("none");
   const finishRef = useRef<() => void>(undefined);
   // With a thumbnail, YouTube's player only loads once someone presses play.
@@ -98,7 +107,8 @@ export default function SessionPlayer({
       await sendBeat();
       const duration = player?.getDuration?.() ?? 0;
       if (duration > 0 && watched < duration * REQUIRED_FRACTION) {
-        setMessage("Watch the whole session to finish it. You can replay it from the start.");
+        setTone("info");
+        setMessage(SKIPPED_MESSAGE);
         return;
       }
       if (alreadyCompleted) {
@@ -112,6 +122,7 @@ export default function SessionPlayer({
           body: JSON.stringify({ session }),
         });
         if (res.status === 401) {
+          setTone("error");
           setMessage("Your sign-in expired, so this session couldn't be saved. Sign in again and watch it once more.");
           setProblem("signin");
           return;
@@ -119,7 +130,8 @@ export default function SessionPlayer({
         if (res.status === 400) {
           const body = (await res.json().catch(() => ({}))) as { error?: string };
           if (body.error === "not_watched") {
-            setMessage("Watch the whole session to finish it. You can replay it from the start.");
+            setTone("info");
+            setMessage(SKIPPED_MESSAGE);
             return;
           }
         }
@@ -127,6 +139,7 @@ export default function SessionPlayer({
         setMessage(null);
         setDone(true);
       } catch {
+        setTone("error");
         setMessage("We couldn't save your progress. Please check your connection and try again.");
         setProblem("retry");
       }
@@ -195,7 +208,14 @@ export default function SessionPlayer({
           </button>
         )}
       </div>
-      {message && <p className="notice" role="alert">{message}</p>}
+      {message && (
+        <p
+          className={tone === "info" ? "notice notice-info" : "notice"}
+          role={tone === "info" ? "status" : "alert"}
+        >
+          {message}
+        </p>
+      )}
       {problem === "retry" && (
         <button type="button" className="btn" onClick={() => finishRef.current?.()}>
           Try Again
@@ -212,6 +232,7 @@ export default function SessionPlayer({
             Session {session} complete{preview ? " (preview, nothing was saved)" : ""}.
           </strong>
           <a className="btn" href={nextHref}>{nextLabel}</a>
+          {afterText && <Prose text={afterText} className="done-after" />}
         </div>
       )}
     </div>

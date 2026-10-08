@@ -16,7 +16,7 @@ export default function SignInEditor({ initial }: { initial: SignInContent }) {
     setC((prev) => ({ ...prev, ...patch }));
   };
 
-  async function upload(file: File) {
+  async function upload(file: File, field: "imageUrl" | "logoUrl" = "imageUrl") {
     setUploading(true);
     setMessage(null);
     try {
@@ -26,7 +26,7 @@ export default function SignInEditor({ initial }: { initial: SignInContent }) {
       const res = await fetch("/api/admin/thumbnail", { method: "POST", body: form });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Upload failed.");
-      set({ imageUrl: json.url });
+      set(field === "logoUrl" ? { logoUrl: json.url } : { imageUrl: json.url });
     } catch (err) {
       setMessage({ kind: "error", text: err instanceof Error ? err.message : "Upload failed." });
     } finally {
@@ -104,6 +104,35 @@ export default function SignInEditor({ initial }: { initial: SignInContent }) {
           <span>Small note under the button</span>
           <textarea rows={3} value={c.helpText} maxLength={300} onChange={(e) => set({ helpText: e.target.value })} />
         </label>
+
+        <div className="field">
+          <span>Logo (optional)</span>
+          <div className="thumb-actions">
+            <label className="btn btn-secondary thumb-upload">
+              {uploading ? "Uploading…" : c.logoUrl ? "Replace Logo" : "Upload Logo"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                hidden
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void upload(file, "logoUrl");
+                }}
+              />
+            </label>
+            {c.logoUrl && (
+              <button type="button" className="link-btn danger" onClick={() => set({ logoUrl: "" })}>
+                Remove
+              </button>
+            )}
+          </div>
+          <small className="muted">
+            Shown in the top bar on every page and above the sign-in heading. Use a wide, simple logo on a
+            white background. Transparent areas become white.
+          </small>
+        </div>
 
         <div className="field">
           <span>Picture (optional)</span>

@@ -33,9 +33,12 @@ export default async function SessionPage({
         <main className="page">
           <div className="card">
             <p className="notice" role="alert">
-              We couldn't load your progress right now. Please go back and try again in a minute.
+              We couldn't load your progress right now. Please try again in a moment.
             </p>
-            <a className="btn" href="/course">Back to sessions</a>
+            <div className="error-actions">
+              <a className="btn" href={`/course/${number}`}>Try Again</a>
+              <a className="btn btn-secondary" href="/course">Back to sessions</a>
+            </div>
           </div>
         </main>
       </>

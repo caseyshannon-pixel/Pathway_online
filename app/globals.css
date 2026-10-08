@@ -498,3 +498,44 @@ h1, h2 {
 .ss-option.is-active { background: #eef4ff; }
 .ss-option.is-selected { font-weight: 700; }
 .ss-empty { padding: 10px 12px; color: var(--muted); }
+
+/* Design review fixes */
+/* Softer, non-alarming notice for gentle nudges */
+.notice-info { background: #fff8e6; border-color: #f5d98a; color: #7a5200; }
+
+/* Locked rows: tint the row, keep the text fully readable */
+.chapter-locked { opacity: 1; background: #f4f2f0; }
+.chapter-locked .chapter-title { color: var(--muted); }
+.chapter-locked .chapter-num { background: #e8e4e1; color: var(--muted); }
+.chapter-hint { color: var(--muted); }
+
+/* "Up next" stands out as the main thing to do */
+.chapter-next {
+  border: 2px solid var(--accent); padding: 20px 18px; gap: 16px;
+  background: color-mix(in srgb, var(--accent) 6%, white);
+  box-shadow: 0 6px 18px rgba(240, 122, 60, 0.15);
+}
+.chapter-next .chapter-title { font-size: 1.15rem; }
+.chapter-eyebrow {
+  display: block; margin-bottom: 2px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent-strong);
+}
+.chapter-cta {
+  flex: none; padding: 12px 22px; border-radius: 999px; background: var(--accent-strong); color: #fff;
+  font-weight: 700; font-size: 1rem;
+}
+.chapter-next:hover .chapter-cta { filter: brightness(0.94); }
+
+/* Bigger tap targets (about 44px) */
+.back { display: inline-flex; align-items: center; min-height: 44px; }
+.link-btn { display: inline-flex; align-items: center; min-height: 44px; padding-left: 4px; padding-right: 4px; }
+.avatar-btn { width: 44px; height: 44px; }
+.account-signout { min-height: 44px; }
+.error-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Logo */
+.brand { display: inline-flex; align-items: center; gap: 10px; }
+.brand-logo { height: 30px; width: auto; display: block; }
+.signin-logo { display: block; max-height: 44px; width: auto; max-width: 70%; margin: 0 auto 14px; }
+.done-after { flex-basis: 100%; margin: 4px 0 0; }
+.done-after p { margin: 0 0 8px; color: var(--text); }

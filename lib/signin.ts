@@ -23,19 +23,22 @@ export function validateSignIn(input: unknown): ValidatedSignIn {
     .filter(Boolean)
     .slice(0, 5);
 
-  // A picture must be one uploaded through the editor (it lives in our Blob store).
-  const imageText = str(raw.imageUrl, 500);
-  let imageUrl = "";
-  if (imageText) {
+  // Pictures must be ones uploaded through the editor (they live in our Blob store).
+  const ownImage = (value: unknown): string => {
+    const text = str(value, 500);
+    if (!text) return "";
     try {
-      const u = new URL(imageText);
-      if (u.protocol === "https:" && u.hostname.endsWith(".public.blob.vercel-storage.com")) {
-        imageUrl = u.toString();
-      }
+      const u = new URL(text);
+      if (u.protocol === "https:" && u.hostname.endsWith(".public.blob.vercel-storage.com")) return u.toString();
     } catch {
       /* invalid */
     }
-    if (!imageUrl) return { ok: false, error: "The picture must be uploaded with the Upload button." };
+    return "invalid";
+  };
+  const imageUrl = ownImage(raw.imageUrl);
+  const logoUrl = ownImage(raw.logoUrl);
+  if (imageUrl === "invalid" || logoUrl === "invalid") {
+    return { ok: false, error: "Pictures must be uploaded with the Upload button." };
   }
 
   return {
@@ -48,6 +51,7 @@ export function validateSignIn(input: unknown): ValidatedSignIn {
       buttonLabel,
       helpText: str(raw.helpText, 300),
       imageUrl,
+      logoUrl,
     },
   };
 }

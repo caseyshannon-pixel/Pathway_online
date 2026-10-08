@@ -130,6 +130,7 @@ export function validateSessions(input: unknown): Validated {
       formTitle: str(raw.formTitle, 100),
       lengthSeconds,
       thumbnailUrl,
+      afterText: str(raw.afterText, 500),
     });
   }
   return { ok: true, sessions };

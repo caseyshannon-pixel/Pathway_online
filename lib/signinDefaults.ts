@@ -12,6 +12,8 @@ export type SignInContent = {
   helpText: string;
   /** Optional picture across the top. */
   imageUrl: string;
+  /** Optional logo shown in the top bar and on the sign-in card. */
+  logoUrl: string;
 };
 
 export const DEFAULT_SIGNIN: SignInContent = {
@@ -22,6 +24,7 @@ export const DEFAULT_SIGNIN: SignInContent = {
   bullets: [],
   buttonLabel: "Sign in with Planning Center",
   helpText:
-    "Use the email address The Rock has for you. If you're asked to create a Planning Center login, use that same email.",
+    "Use the same login as Church Center. If you're asked to create a login, use the email address The Rock has for you.",
   imageUrl: "",
+  logoUrl: "",
 };

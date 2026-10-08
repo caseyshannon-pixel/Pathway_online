@@ -4,6 +4,7 @@ import { getSessions } from "@/lib/content";
 import { CampusRequiredError, getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
 import { formatLength } from "@/lib/duration";
+import Prose from "@/components/Prose";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +37,19 @@ export default async function Course() {
         <div className="card">
           <h1>Welcome, {session.firstName}</h1>
           {progress === null ? (
-            <p className="notice" role="alert">
-              We couldn't load your progress right now. Please refresh in a minute.
-            </p>
+            <>
+              <p className="notice" role="alert">
+                We couldn't load your progress right now. Please try again in a moment.
+              </p>
+              <a className="btn" href="/course">Try Again</a>
+            </>
           ) : finished ? (
-            <p className="muted">You've finished Pathway. You can rewatch any session below.</p>
+            <>
+              <p className="muted">You've finished Pathway. You can rewatch any session below.</p>
+              {sessions[sessions.length - 1]?.afterText && (
+                <Prose text={sessions[sessions.length - 1].afterText} />
+              )}
+            </>
           ) : (
             <p className="muted">
               {completed === 0
@@ -86,6 +95,7 @@ export default async function Course() {
                     {isDone ? "✓" : s.number}
                   </span>
                   <span className="chapter-title">
+                    {isNext && <small className="chapter-eyebrow">Up next</small>}
                     {s.title}
                     {(() => {
                       const hint = [
@@ -97,15 +107,17 @@ export default async function Course() {
                       ) : null;
                     })()}
                   </span>
-                  <span className={`status status-${isDone ? "done" : isNext ? "next" : "locked"}`}>
-                    {status}
-                  </span>
+                  {isNext ? (
+                    <span className="chapter-cta">{completed === 0 ? "Start" : "Continue"}</span>
+                  ) : (
+                    <span className={`status status-${isDone ? "done" : "locked"}`}>{status}</span>
+                  )}
                 </>
               );
               return (
                 <li key={s.number}>
                   {open ? (
-                    <a className="chapter chapter-link" href={`/course/${s.number}`}>
+                    <a className={`chapter chapter-link${isNext ? " chapter-next" : ""}`} href={`/course/${s.number}`}>
                       {inner}
                     </a>
                   ) : (

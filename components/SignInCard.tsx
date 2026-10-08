@@ -19,6 +19,10 @@ export default function SignInCard({
         <img className="signin-image" src={content.imageUrl} alt="" />
       )}
       <div className="signin-body">
+        {content.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="signin-logo" src={content.logoUrl} alt="" />
+        )}
         {content.eyebrow && <p className="signin-eyebrow">{content.eyebrow}</p>}
         <h1>{content.heading}</h1>
         {content.intro && <p className="signin-intro">{content.intro}</p>}

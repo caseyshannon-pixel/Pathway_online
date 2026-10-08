@@ -23,9 +23,11 @@ export type Session = {
   lengthSeconds: number;
   /** Picture shown over the video until someone presses play. Empty = show the player. */
   thumbnailUrl: string;
+  /** Shown when someone finishes this session, e.g. what happens next. */
+  afterText: string;
 };
 
-const blank = { description: "", notes: "", links: [], formUrl: "", formTitle: "", lengthSeconds: 0, thumbnailUrl: "" };
+const blank = { description: "", notes: "", links: [], formUrl: "", formTitle: "", lengthSeconds: 0, thumbnailUrl: "", afterText: "" };
 
 export const DEFAULT_SESSIONS: Session[] = [
   { number: 1, title: "Session 1", youtubeId: "r7HR7Xsro8M", ...blank },

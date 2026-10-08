@@ -18,6 +18,7 @@ const emptySession = (): Session => ({
   formTitle: "",
   lengthSeconds: 0,
   thumbnailUrl: "",
+  afterText: "",
 });
 
 export default function ContentEditor({ initial }: { initial: Session[] }) {
@@ -193,6 +194,18 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                 placeholder="Discussion questions, key points, etc. Leave a blank line between paragraphs."
                 onChange={(e) => update(i, { notes: e.target.value })}
               />
+            </label>
+
+            <label className="field">
+              <span>After they finish (optional)</span>
+              <textarea
+                rows={3}
+                value={s.afterText}
+                maxLength={500}
+                placeholder="What happens next, for example: Someone from your campus will reach out this week."
+                onChange={(e) => update(i, { afterText: e.target.value })}
+              />
+              <small className="muted">Shown when someone completes this session. Great for the last one.</small>
             </label>
 
             <fieldset className="field">
