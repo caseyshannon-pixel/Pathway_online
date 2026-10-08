@@ -7,6 +7,8 @@
 
 export type SessionLink = { label: string; url: string };
 
+export type SessionForm = { title: string; url: string };
+
 export type Session = {
   number: number;
   title: string;
@@ -16,9 +18,8 @@ export type Session = {
   /** Extra notes shown below the video. Blank line = new paragraph. */
   notes: string;
   links: SessionLink[];
-  /** Church Center form shown below the video. Empty = no form section. */
-  formUrl: string;
-  formTitle: string;
+  /** Church Center forms shown below the video (up to 5). Empty = no form section. */
+  forms: SessionForm[];
   /** Video length in seconds; 0 = not set. Used to check people really watched it. */
   lengthSeconds: number;
   /** Picture shown over the video until someone presses play. Empty = show the player. */
@@ -27,7 +28,7 @@ export type Session = {
   afterText: string;
 };
 
-const blank = { description: "", notes: "", links: [], formUrl: "", formTitle: "", lengthSeconds: 0, thumbnailUrl: "", afterText: "" };
+const blank = { description: "", notes: "", links: [], forms: [], lengthSeconds: 0, thumbnailUrl: "", afterText: "" };
 
 export const DEFAULT_SESSIONS: Session[] = [
   { number: 1, title: "Session 1", youtubeId: "r7HR7Xsro8M", ...blank },

@@ -14,8 +14,7 @@ const emptySession = (): Session => ({
   description: "",
   notes: "",
   links: [],
-  formUrl: "",
-  formTitle: "",
+  forms: [],
   lengthSeconds: 0,
   thumbnailUrl: "",
   afterText: "",
@@ -249,29 +248,51 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
               )}
             </fieldset>
 
-            <label className="field">
-              <span>Church Center form (optional)</span>
-              <input
-                value={s.formUrl}
-                placeholder="https://yourchurch.churchcenter.com/people/forms/123"
-                onChange={(e) => update(i, { formUrl: e.target.value })}
-              />
+            <fieldset className="field">
+              <legend>Church Center forms (optional)</legend>
+              {s.forms.map((f, k) => (
+                <div className="link-row" key={k}>
+                  <input
+                    aria-label={`Form ${k + 1} heading`}
+                    placeholder="Heading, like Next step"
+                    maxLength={100}
+                    value={f.title}
+                    onChange={(e) =>
+                      update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, title: e.target.value } : x)) })
+                    }
+                  />
+                  <input
+                    aria-label={`Form ${k + 1} link`}
+                    placeholder="https://yourchurch.churchcenter.com/people/forms/123"
+                    value={f.url}
+                    onChange={(e) =>
+                      update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, url: e.target.value } : x)) })
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="link-btn"
+                    aria-label={`Remove form ${k + 1}`}
+                    onClick={() => update(i, { forms: s.forms.filter((_, m) => m !== k) })}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              {s.forms.length < 5 && (
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => update(i, { forms: [...s.forms, { title: "", url: "" }] })}
+                >
+                  + Add a form
+                </button>
+              )}
               <small className="muted">
-                When filled in, the form appears below the video. Empty means no form section.
+                Each form appears below the video, in this order, with its own heading and button. No forms
+                means no form section.
               </small>
-            </label>
-
-            {s.formUrl.trim() && (
-              <label className="field">
-                <span>Form heading</span>
-                <input
-                  value={s.formTitle}
-                  maxLength={100}
-                  placeholder="Next step"
-                  onChange={(e) => update(i, { formTitle: e.target.value })}
-                />
-              </label>
-            )}
+            </fieldset>
 
             <div className="editor-actions">
               <a className="link-btn" href={`/admin/preview/${i + 1}`} target="_blank" rel="noopener noreferrer">

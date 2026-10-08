@@ -57,18 +57,20 @@ export default function SessionCard({
         </section>
       )}
 
-      {session.formUrl && (
-        <section className="session-section">
-          <h2>{session.formTitle || "Next step"}</h2>
-          <p className="muted">
-            This form opens in Church Center. Sign in with your Planning Center login and
-            your information will be filled in for you.
-          </p>
-          <a className="btn btn-dark" href={session.formUrl} target="_blank" rel="noopener noreferrer">
+      {session.forms.map((form, i) => (
+        <section className="session-section" key={`${form.url}-${i}`}>
+          <h2>{form.title || (session.forms.length > 1 ? `Form ${i + 1}` : "Next step")}</h2>
+          {i === 0 && (
+            <p className="muted">
+              {session.forms.length > 1 ? "These forms open" : "This form opens"} in Church Center. Sign in
+              with your Planning Center login and your information will be filled in for you.
+            </p>
+          )}
+          <a className="btn btn-dark" href={form.url} target="_blank" rel="noopener noreferrer">
             Open The Form
           </a>
         </section>
-      )}
+      ))}
     </div>
   );
 }

@@ -4,10 +4,11 @@
 // (or Blob isn't set up), the defaults in ./course are used.
 
 import { readJson, writeJson } from "./blobStore";
-import { DEFAULT_SESSIONS, type Session, type SessionLink } from "./course";
+import { DEFAULT_SESSIONS, type Session, type SessionForm, type SessionLink } from "./course";
 
 const PATH = "pathway/course.json";
 export const MAX_SESSIONS = 20;
+export const MAX_FORMS = 5;
 
 /** Accepts a bare 11-character id or any common YouTube link. Returns "" if neither. */
 export function parseYoutubeId(input: string): string {
@@ -73,13 +74,26 @@ export function validateSessions(input: unknown): Validated {
       return { ok: false, error: `Session ${n}: that doesn't look like a YouTube link or video ID.` };
     }
 
-    const formText = str(raw.formUrl, 300);
-    const formUrl = parseFormUrl(formText);
-    if (formText && !formUrl) {
-      return {
-        ok: false,
-        error: `Session ${n}: the form must be a Church Center form link, like https://yourchurch.churchcenter.com/people/forms/123.`,
-      };
+    // Forms: a list. Content saved before this was a list has a single formUrl/formTitle,
+    // which is carried over as the first form.
+    const rawForms: unknown[] = Array.isArray(raw.forms)
+      ? raw.forms
+      : str(raw.formUrl, 300)
+        ? [{ title: raw.formTitle, url: raw.formUrl }]
+        : [];
+    const forms: SessionForm[] = [];
+    for (const f of rawForms.slice(0, MAX_FORMS) as Record<string, unknown>[]) {
+      const urlText = str(f?.url, 300);
+      const title = str(f?.title, 100);
+      if (!urlText && !title) continue; // ignore empty rows
+      const url = parseFormUrl(urlText);
+      if (!url) {
+        return {
+          ok: false,
+          error: `Session ${n}: each form needs a Church Center form link, like https://yourchurch.churchcenter.com/people/forms/123.`,
+        };
+      }
+      forms.push({ title, url });
     }
 
     // Thumbnails must be ones uploaded through the editor (they live in our Blob store).
@@ -126,8 +140,7 @@ export function validateSessions(input: unknown): Validated {
       description: str(raw.description, 2000),
       notes: str(raw.notes, 5000),
       links,
-      formUrl,
-      formTitle: str(raw.formTitle, 100),
+      forms,
       lengthSeconds,
       thumbnailUrl,
       afterText: str(raw.afterText, 500),
