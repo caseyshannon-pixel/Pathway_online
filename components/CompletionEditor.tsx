@@ -114,7 +114,7 @@ export default function CompletionEditor({ initial }: { initial: CompletionConte
         <div className="field" role="group" aria-labelledby="completion-actions-heading">
           <span id="completion-actions-heading">Buttons (optional, up to 3)</span>
           {c.actions.map((a, i) => (
-            <div className="link-row" key={i}>
+            <div className="link-row link-row-finder" key={i}>
               <input
                 aria-label={`Button ${i + 1} text`}
                 placeholder="Button text, like Join a group"
