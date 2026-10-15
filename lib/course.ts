@@ -13,7 +13,14 @@ export type SessionForm = {
   url: string;
   /** Text on the button. Empty = "Open The Form". */
   buttonLabel: string;
+  /** Sentence above the button. Empty = the standard Church Center sign-in note (first form only). */
+  note: string;
+  /** Show no note at all for this form. */
+  hideNote: boolean;
 };
+
+export const DEFAULT_FORM_NOTE =
+  "This form opens in Church Center. Sign in with your Planning Center login and your information will be filled in for you.";
 
 export type Session = {
   number: number;

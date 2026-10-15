@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@/lib/course";
 import { shrinkImage } from "@/lib/shrinkImage";
+import { DEFAULT_FORM_NOTE } from "@/lib/course";
 
 const MAX_SESSIONS = 20;
 
@@ -304,6 +305,34 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                       }
                     />
                   </label>
+                  <label className="field form-card-link">
+                    <span>Note above the button</span>
+                    <textarea
+                      rows={2}
+                      maxLength={300}
+                      disabled={f.hideNote}
+                      placeholder={k === 0 ? DEFAULT_FORM_NOTE : "Optional"}
+                      value={f.note}
+                      onChange={(e) =>
+                        update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, note: e.target.value } : x)) })
+                      }
+                    />
+                    <small className="muted">
+                      {k === 0
+                        ? "Leave empty to show the standard sentence shown in grey above."
+                        : "Leave empty to show no note on this form."}
+                    </small>
+                  </label>
+                  <label className="check-row form-card-link">
+                    <input
+                      type="checkbox"
+                      checked={f.hideNote}
+                      onChange={(e) =>
+                        update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, hideNote: e.target.checked } : x)) })
+                      }
+                    />
+                    <span>Don't show any note on this form</span>
+                  </label>
                   <button
                     type="button"
                     className="link-btn danger form-card-remove"
@@ -318,7 +347,7 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                 <button
                   type="button"
                   className="link-btn"
-                  onClick={() => update(i, { forms: [...s.forms, { title: "", url: "", buttonLabel: "" }] })}
+                  onClick={() => update(i, { forms: [...s.forms, { title: "", url: "", buttonLabel: "", note: "", hideNote: false }] })}
                 >
                   + Add a form
                 </button>

@@ -1,4 +1,4 @@
-import type { Session } from "@/lib/course";
+import { DEFAULT_FORM_NOTE, type Session } from "@/lib/course";
 import SessionPlayer from "./SessionPlayer";
 import Prose from "./Prose";
 import { formatLength } from "@/lib/duration";
@@ -39,10 +39,12 @@ export default function SessionCard({
   const formParts = session.forms.map((form, i) => (
     <section className="after-part" key={`${form.url}-${i}`}>
       <h2>{form.title || (session.forms.length > 1 ? `Form ${i + 1}` : "Next step")}</h2>
-      {i === 0 && (
+      {!form.hideNote && (form.note || i === 0) && (
         <p className="muted">
-          {session.forms.length > 1 ? "These forms open" : "This form opens"} in Church Center. Sign in
-          with your Planning Center login and your information will be filled in for you.
+          {form.note ||
+            (session.forms.length > 1
+              ? DEFAULT_FORM_NOTE.replace("This form opens", "These forms open")
+              : DEFAULT_FORM_NOTE)}
         </p>
       )}
       <a className="btn btn-cta" href={form.url} target="_blank" rel="noopener noreferrer">
