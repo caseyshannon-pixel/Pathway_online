@@ -561,3 +561,16 @@ h1, h2 {
 .btn-danger { background: #b42318; color: #fff; }
 .btn-danger:hover { filter: brightness(0.92); }
 @media (max-width: 480px) { .confirm-actions .btn { flex: 1 1 100%; } }
+
+/* Course page welcome section */
+.welcome-section { margin: 18px 0 8px; display: grid; gap: 14px; }
+.welcome-block {
+  padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 5%, white);
+}
+.welcome-block h2 { margin: 0 0 8px; font-size: 1.15rem; }
+.welcome-block .prose p:last-child { margin-bottom: 0; }
+.welcome-points { margin: 0; }
+.check-row { display: flex; align-items: flex-start; gap: 10px; line-height: 1.4; cursor: pointer; }
+.check-row input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--accent); }
+.welcome-preview .card { padding: 20px; }

@@ -5,6 +5,8 @@ import { CampusRequiredError, getProgress, type Progress } from "@/lib/pcoWorkfl
 import TopBar from "@/components/TopBar";
 import { formatLength } from "@/lib/duration";
 import Prose from "@/components/Prose";
+import WelcomeSection from "@/components/WelcomeSection";
+import { getWelcome } from "@/lib/welcome";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +14,7 @@ export default async function Course() {
   const session = await getSession();
   if (!session) redirect("/");
 
-  const sessions = await getSessions();
+  const [sessions, welcome] = await Promise.all([getSessions(), getWelcome()]);
 
   let progress: Progress | null = null;
   try {
@@ -36,6 +38,7 @@ export default async function Course() {
       <main className="page">
         <div className="card">
           <h1>Welcome, {session.firstName}</h1>
+          {!(welcome.hideAfterStart && completed > 0) && <WelcomeSection content={welcome} />}
           {progress === null ? (
             <>
               <p className="notice" role="alert">
