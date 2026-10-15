@@ -9,12 +9,12 @@ export const dynamic = "force-dynamic";
 export default async function Admin({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; done?: string; error?: string }>;
+  searchParams: Promise<{ q?: string; done?: string; reset?: string; error?: string }>;
 }) {
   const session = await getSession();
   if (!(await isAdmin(session))) notFound();
 
-  const { q = "", done, error } = await searchParams;
+  const { q = "", done, reset, error } = await searchParams;
   const query = q.trim();
 
   return (
@@ -37,7 +37,12 @@ export default async function Admin({
 
           {error && <p className="notice" role="alert">Something went wrong. Please try again.</p>}
 
-          <PersonSearch mode="advance" initialQuery={query} highlightId={done} />
+          <PersonSearch
+            mode="advance"
+            initialQuery={query}
+            highlightId={reset ?? done}
+            highlightLabel={reset ? "Restarted" : undefined}
+          />
         </div>
       </main>
     </>
