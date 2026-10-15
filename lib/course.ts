@@ -22,6 +22,14 @@ export type SessionForm = {
 export const DEFAULT_FORM_NOTE =
   "This form opens in Church Center. Sign in with your Planning Center login and your information will be filled in for you.";
 
+export type SessionResource = {
+  /** A picture uploaded in the editor. */
+  imageUrl: string;
+  title: string;
+  /** Where it goes when clicked. Empty = open the picture itself. */
+  url: string;
+};
+
 export type Session = {
   number: number;
   title: string;
@@ -39,9 +47,11 @@ export type Session = {
   thumbnailUrl: string;
   /** Shown when someone finishes this session, e.g. what happens next. */
   afterText: string;
+  /** Pictures for additional resources, shown as thumbnails under the forms (up to 8). */
+  resources: SessionResource[];
 };
 
-const blank = { description: "", notes: "", links: [], forms: [], lengthSeconds: 0, thumbnailUrl: "", afterText: "" };
+const blank = { description: "", notes: "", links: [], forms: [], lengthSeconds: 0, thumbnailUrl: "", afterText: "", resources: [] };
 
 export const DEFAULT_SESSIONS: Session[] = [
   { number: 1, title: "Session 1", youtubeId: "r7HR7Xsro8M", ...blank },

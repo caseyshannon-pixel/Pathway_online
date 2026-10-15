@@ -53,11 +53,30 @@ export default function SessionCard({
     </section>
   ));
 
-  // Completion message, notes, links and forms live together in one box under the video.
-  const afterContent = notesPart || formParts.length > 0 ? (
+  const resourcesPart =
+    session.resources.length > 0 ? (
+      <section className="after-part" key="resources">
+        <h2>Additional resources</h2>
+        <ul className="resource-grid">
+          {session.resources.map((r, i) => (
+            <li key={`${r.imageUrl}-${i}`}>
+              <a href={r.url || r.imageUrl} target="_blank" rel="noopener noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={r.imageUrl} alt={r.title || `Resource ${i + 1}`} loading="lazy" />
+                {r.title && <span>{r.title}</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null;
+
+  // Completion message, notes, links, forms and resources live together in one box under the video.
+  const afterContent = notesPart || formParts.length > 0 || resourcesPart ? (
     <>
       {notesPart}
       {formParts}
+      {resourcesPart}
     </>
   ) : null;
 
