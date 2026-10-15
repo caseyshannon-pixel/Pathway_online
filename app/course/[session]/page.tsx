@@ -3,6 +3,8 @@ import { getSession } from "@/lib/session";
 import { isAdmin } from "@/lib/admin";
 import { getSessions } from "@/lib/content";
 import { getProgress, type Progress } from "@/lib/pcoWorkflow";
+import { helpHref } from "@/lib/help";
+import HelpLink from "@/components/HelpLink";
 import TopBar from "@/components/TopBar";
 import SessionCard from "@/components/SessionCard";
 
@@ -39,6 +41,7 @@ export default async function SessionPage({
               <a className="btn" href={`/course/${number}`}>Try Again</a>
               <a className="btn btn-secondary" href="/course">Back to sessions</a>
             </div>
+            <HelpLink href={helpHref({ name: user.name, path: `/course/${number}` })} />
           </div>
         </main>
       </>
@@ -61,6 +64,7 @@ export default async function SessionPage({
           alreadyCompleted={alreadyCompleted}
           basePath="/course"
           adminShortcut={await isAdmin(user)}
+          helpHref={helpHref({ name: user.name, path: `/course/${number}` })}
         />
       </main>
     </>

@@ -1,4 +1,5 @@
 import type { SignInContent } from "@/lib/signinDefaults";
+import { helpHref } from "@/lib/help";
 
 // The sign-in card. Pure display, so the real page and the admin's live preview match.
 export default function SignInCard({
@@ -39,6 +40,9 @@ export default function SignInCard({
           {content.buttonLabel}
         </a>
         {content.helpText && <p className="signin-help">{content.helpText}</p>}
+        <p className="signin-help">
+          Trouble signing in? <a href={helpHref({ path: "/" })}>Email us</a>
+        </p>
       </div>
     </div>
   );

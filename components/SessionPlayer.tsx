@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Prose from "./Prose";
+import HelpLink from "./HelpLink";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -25,6 +26,8 @@ type Props = {
   afterText?: string;
   /** Admins: show a button to finish once 10% has been watched. */
   adminShortcut?: boolean;
+  /** A mailto: link shown under real errors ("Still stuck? Email us"). */
+  helpHref?: string;
   /** Notes, links and forms, shown in the same box as the completion message. */
   children?: React.ReactNode;
 };
@@ -63,6 +66,7 @@ export default function SessionPlayer({
   thumbnailUrl = "",
   afterText = "",
   adminShortcut = false,
+  helpHref,
   children,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -246,6 +250,7 @@ export default function SessionPlayer({
           Sign In Again
         </a>
       )}
+      {helpHref && message && tone === "error" && <HelpLink href={helpHref} />}
       {(done || children) && (
         <div className="after-box">
           {done && (
