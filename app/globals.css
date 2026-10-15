@@ -672,3 +672,11 @@ h1, h2 {
 .finder-name { font-weight: 700; }
 .finder-meta { font-size: 0.82rem; color: var(--muted); }
 .finder-url { font-size: 0.78rem; color: var(--muted); overflow-wrap: anywhere; }
+
+/* Find in Planning Center: a prominent blue button */
+.finder-trigger {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 0.95rem;
+  justify-self: start; white-space: nowrap;
+}
+.link-row-finder { grid-template-columns: 1fr 1.6fr auto auto; }
+@media (max-width: 760px) { .link-row-finder { grid-template-columns: 1fr; } }
