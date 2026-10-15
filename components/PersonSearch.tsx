@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PersonAvatar from "./PersonAvatar";
 
 type Person = {
@@ -15,6 +15,7 @@ type Person = {
   email: string;
   phone: string;
   // advance mode only
+  hasCard?: boolean;
   completed?: number;
   total?: number;
 };
@@ -26,9 +27,27 @@ type Props = {
   adminIds?: string[];
   /** a person to mark as just changed ("Moved forward" / "Admin added") */
   highlightId?: string;
+  /** What to say next to the highlighted person (default: "Moved forward" / "Admin added"). */
+  highlightLabel?: string;
 };
 
-export default function PersonSearch({ mode, initialQuery, adminIds = [], highlightId }: Props) {
+export default function PersonSearch({
+  mode,
+  initialQuery,
+  adminIds = [],
+  highlightId,
+  highlightLabel,
+}: Props) {
+  // Restarting someone asks first, in a pop-up. Nothing happens until they confirm.
+  const [resetTarget, setResetTarget] = useState<Person | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (resetTarget && !dialog.open) dialog.showModal();
+    if (!resetTarget && dialog.open) dialog.close();
+  }, [resetTarget]);
+
   const [query, setQuery] = useState(initialQuery);
   const [people, setPeople] = useState<Person[]>([]);
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -114,7 +133,7 @@ export default function PersonSearch({ mode, initialQuery, adminIds = [], highli
                   )}
                   {highlightId === p.id && (
                     <span className="status-done">
-                      {mode === "advance" ? "Moved forward" : "Admin added"}
+                      {highlightLabel ?? (mode === "advance" ? "Moved forward" : "Admin added")}
                     </span>
                   )}
                 </div>
@@ -128,15 +147,22 @@ export default function PersonSearch({ mode, initialQuery, adminIds = [], highli
               </div>
 
               {mode === "advance" ? (
-                !finished && (
-                  <form action="/api/admin/advance" method="post">
-                    <input type="hidden" name="personId" value={p.id} />
-                    <input type="hidden" name="q" value={query} />
-                    <button className="btn btn-dark" type="submit">
-                      Finish session {(p.completed ?? 0) + 1}
+                <div className="psearch-actions">
+                  {!finished && (
+                    <form action="/api/admin/advance" method="post">
+                      <input type="hidden" name="personId" value={p.id} />
+                      <input type="hidden" name="q" value={query} />
+                      <button className="btn btn-dark" type="submit">
+                        Finish session {(p.completed ?? 0) + 1}
+                      </button>
+                    </form>
+                  )}
+                  {p.hasCard && (
+                    <button type="button" className="link-btn danger" onClick={() => setResetTarget(p)}>
+                      Restart from scratch
                     </button>
-                  </form>
-                )
+                  )}
+                </div>
               ) : adminIds.includes(p.id) ? (
                 <span className="status status-done">Already an admin</span>
               ) : (
@@ -151,6 +177,35 @@ export default function PersonSearch({ mode, initialQuery, adminIds = [], highli
           );
         })}
       </ul>
+
+      <dialog
+        ref={dialogRef}
+        className="confirm-dialog"
+        aria-labelledby="confirm-reset-title"
+        aria-describedby="confirm-reset-text"
+        onClose={() => setResetTarget(null)}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setResetTarget(null);
+        }}
+      >
+        <h2 id="confirm-reset-title">Restart from scratch?</h2>
+        <p id="confirm-reset-text">
+          <strong>{resetTarget?.name}</strong> will go back to the start of Pathway and have to watch every
+          session again. Their Pathway card is removed in Planning Center. It isn't deleted for good: it can be
+          restored there.
+        </p>
+        <p className="muted">Their campus choice, if they made one, is kept.</p>
+        <form action="/api/admin/reset" method="post" className="confirm-actions">
+          <input type="hidden" name="personId" value={resetTarget?.id ?? ""} />
+          <input type="hidden" name="q" value={query} />
+          <button type="button" className="btn btn-secondary" autoFocus onClick={() => setResetTarget(null)}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn-danger">
+            Yes, Restart
+          </button>
+        </form>
+      </dialog>
     </div>
   );
 }

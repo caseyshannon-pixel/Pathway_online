@@ -297,7 +297,7 @@ export async function searchPeople(query: string): Promise<PersonDetail[]> {
 /** Sessions finished by each person, without adding anyone to the workflow. */
 export async function getProgressMany(
   personIds: string[],
-): Promise<Map<string, { completed: number; total: number }>> {
+): Promise<Map<string, { completed: number; total: number; hasCard: boolean }>> {
   const [sessions, cards] = await Promise.all([
     getSessions(),
     Promise.all(personIds.map((id) => findCard(id))),
@@ -308,7 +308,14 @@ export async function getProgressMany(
   return new Map(
     personIds.map((id, i) => {
       const card = cards[i];
-      return [id, { completed: completedFrom(card, card ? steps.get(workflowOf(card)) ?? [] : [], total), total }];
+      return [
+        id,
+        {
+          completed: completedFrom(card, card ? steps.get(workflowOf(card)) ?? [] : [], total),
+          total,
+          hasCard: card !== null,
+        },
+      ];
     }),
   );
 }
@@ -439,4 +446,26 @@ export async function getWorkflowSnapshot(): Promise<WorkflowSnapshot> {
   const value = { total, titles: sessions.map((s) => s.title), cards, workflows };
   snapshotCache = { at: Date.now(), value };
   return value;
+}
+
+/**
+ * Restarts a person from scratch: removes their active card in every Pathway
+ * workflow. Planning Center's "remove" is not a permanent delete (the card can
+ * be restored there), and the app ignores removed cards, so the person gets a
+ * fresh card at the first step on their next visit. Returns how many were removed.
+ */
+export async function resetProgress(personId: string): Promise<number> {
+  const [json, wids] = await Promise.all([
+    pco(`/people/${personId}/workflow_cards?per_page=100`),
+    allWorkflowIds(),
+  ]);
+  const allowed = new Set(wids);
+  const cards = ((json?.data ?? []) as Card[]).filter(
+    (c) => !c.attributes.removed_at && allowed.has(workflowOf(c)),
+  );
+  for (const c of cards) {
+    await pco(`/people/${personId}/workflow_cards/${c.id}/remove`, { method: "POST", body: JSON.stringify({}) });
+  }
+  snapshotCache = null; // so the dashboard reflects it right away
+  return cards.length;
 }
