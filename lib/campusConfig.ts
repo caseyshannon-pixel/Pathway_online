@@ -36,25 +36,3 @@ export async function saveCampusMap(map: Record<string, string>) {
   await writeSecure(PATH, next);
   cache = { at: Date.now(), map: next };
 }
-
-// ---- A person's own campus choice (for people with no primary campus in Planning Center)
-
-const choicePath = (personId: string) => `pathway/campus-choice/${personId}.json`;
-
-export async function getCampusChoice(personId: string): Promise<string | null> {
-  if (!/^\d+$/.test(personId)) return null;
-  if (!storageConfigured() && !privateStorageConfigured()) return null;
-  try {
-    const data = (await readSecure(choicePath(personId))) as { campusId?: unknown } | null;
-    const id = String(data?.campusId ?? "");
-    return /^\d+$/.test(id) ? id : null;
-  } catch (err) {
-    console.error("Could not read campus choice:", err);
-    return null;
-  }
-}
-
-export async function saveCampusChoice(personId: string, campusId: string) {
-  if (!/^\d+$/.test(personId) || !/^\d+$/.test(campusId)) throw new Error("Invalid id");
-  await writeSecure(choicePath(personId), { campusId });
-}

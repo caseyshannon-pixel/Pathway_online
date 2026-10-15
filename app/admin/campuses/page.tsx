@@ -4,7 +4,7 @@ import { isAdmin } from "@/lib/admin";
 import { getSessions } from "@/lib/content";
 import { getCampusMap } from "@/lib/campusConfig";
 import { privateStorageConfigured, storageConfigured } from "@/lib/blobStore";
-import { defaultWorkflowId, listCampuses, listWorkflows } from "@/lib/pcoWorkflow";
+import { defaultWorkflowId, getOnlineCampus, listCampuses, listWorkflows } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
 import SearchableSelect from "@/components/SearchableSelect";
 
@@ -32,9 +32,9 @@ export default async function AdminCampuses({
         <div className="card">
           <h1>Campus workflows</h1>
           <p className="muted">
-            New people start in the workflow for their Primary Campus in Planning Center. If they
-            don't have one, they choose a campus in the app first. Campuses without a workflow use the
-            original Pathway workflow. Anyone who already has a card stays where they are.
+            New people start in the workflow for their Primary Campus in Planning Center. People with no
+            Primary Campus go to the Online campus's workflow. Campuses without a workflow use the original
+            Pathway workflow. Anyone who already has a card stays where they are.
           </p>
 
           {!storageConfigured() && !privateStorageConfigured() && (
@@ -55,6 +55,23 @@ export default async function AdminCampuses({
             </p>
           ) : (
             <form action="/api/admin/campuses" method="post" className="editor">
+              {loaded.online ? (
+                loaded.map[loaded.online.id] ? (
+                  <p className="saved">
+                    People with no Primary Campus go to <strong>{loaded.online.name}</strong>'s workflow.
+                  </p>
+                ) : (
+                  <p className="notice">
+                    People with no Primary Campus are meant to go to <strong>{loaded.online.name}</strong>, but it
+                    has no workflow chosen below, so they'll use the original workflow until you pick one.
+                  </p>
+                )
+              ) : (
+                <p className="notice">
+                  No campus with "Online" in its name was found, so people with no Primary Campus use the
+                  original workflow. Add a campus named Online in Planning Center to change that.
+                </p>
+              )}
               <p className="muted">
                 Each Pathway workflow needs <strong>{loaded.expected} steps</strong>: one per session
                 ({loaded.expected - 1}) plus a final "Completed" step, in order.
@@ -105,11 +122,12 @@ export default async function AdminCampuses({
 }
 
 async function load() {
-  const [campuses, workflows, map, sessions] = await Promise.all([
+  const [campuses, workflows, map, sessions, online] = await Promise.all([
     listCampuses(),
     listWorkflows(),
     getCampusMap(),
     getSessions(),
+    getOnlineCampus(),
   ]);
-  return { campuses, workflows, map, expected: sessions.length + 1, defaultId: defaultWorkflowId() };
+  return { campuses, workflows, map, online, expected: sessions.length + 1, defaultId: defaultWorkflowId() };
 }

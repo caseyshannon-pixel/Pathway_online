@@ -6,7 +6,7 @@
 // tells us how many sessions they have finished.
 
 import { getSessions } from "./content";
-import { getCampusChoice, getCampusMap } from "./campusConfig";
+import { getCampusMap } from "./campusConfig";
 
 const API = process.env.PCO_API_BASE ?? "https://api.planningcenteronline.com/people/v2";
 
@@ -111,21 +111,23 @@ async function findCard(personId: string): Promise<Card | null> {
   return cards[0] ?? null;
 }
 
-/** Thrown when a new person has no campus yet and must choose one before starting. */
-export class CampusRequiredError extends Error {
-  constructor() {
-    super("CAMPUS_REQUIRED");
+/** The campus named "Online" (or with "online" in its name): where people with no Primary Campus go. */
+export async function getOnlineCampus(): Promise<Campus | null> {
+  try {
+    return (await listCampuses()).find((c) => /\bonline\b/i.test(c.name)) ?? null;
+  } catch (err) {
+    console.error("Could not look up the Online campus:", err);
+    return null;
   }
 }
 
 /**
  * The workflow a new person should start in: their Primary Campus in Planning
- * Center, else the campus they chose in the app. With `askCampus`, a person with
- * neither gets a CampusRequiredError so they can be asked; otherwise (admin
- * actions) they go in the original workflow. Nothing changes until at least one
- * campus has its own workflow.
+ * Center. Someone with no Primary Campus goes to the Online campus's workflow.
+ * A campus with no workflow of its own (or no Online campus) uses the original
+ * workflow. Nothing changes until at least one campus has its own workflow.
  */
-async function workflowForPerson(personId: string, askCampus = false): Promise<string> {
+async function workflowForPerson(personId: string): Promise<string> {
   const map = await getCampusMap();
   if (Object.keys(map).length === 0) return defaultWorkflowId();
 
@@ -136,13 +138,9 @@ async function workflowForPerson(personId: string, askCampus = false): Promise<s
   } catch (err) {
     console.error("Could not read primary campus:", err);
   }
-  if (!campusId) campusId = (await getCampusChoice(personId)) ?? "";
+  if (!campusId) campusId = (await getOnlineCampus())?.id ?? "";
 
-  if (!campusId) {
-    if (askCampus) throw new CampusRequiredError();
-    return defaultWorkflowId();
-  }
-  return map[campusId] ?? defaultWorkflowId();
+  return (campusId && map[campusId]) || defaultWorkflowId();
 }
 
 function completedFrom(card: Card | null, stepIds: string[], total: number) {
@@ -177,17 +175,16 @@ export async function getProgress(
   personId: string,
   opts: { create: false },
 ): Promise<Omit<Progress, "cardId"> & { cardId: string | null }>;
-export async function getProgress(personId: string, opts: { askCampus: true }): Promise<Progress>;
 export async function getProgress(
   personId: string,
-  opts: { create?: boolean; askCampus?: boolean } = {},
+  opts: { create?: boolean } = {},
 ) {
   const [existing, sessions] = await Promise.all([findCard(personId), getSessions()]);
   const total = sessions.length;
   if (!existing && opts.create === false) {
     return { completed: 0, total, cardId: null };
   }
-  const card = existing ?? (await createCard(personId, await workflowForPerson(personId, opts.askCampus)));
+  const card = existing ?? (await createCard(personId, await workflowForPerson(personId)));
   const stepIds = await getStepIds(workflowOf(card) || defaultWorkflowId());
 
   return { completed: completedFrom(card, stepIds, total), total, cardId: card.id };
