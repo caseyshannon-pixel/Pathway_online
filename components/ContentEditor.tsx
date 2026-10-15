@@ -197,8 +197,9 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
               </div>
               {uploadError?.i === i && <small className="notice">{uploadError.text}</small>}
               <small className="muted">
-                Shown over the video until someone presses play. A 16:9 picture (like 1280×720) fits best.
-                Click Save changes below to publish it.
+                Shown over the video until someone presses play. <strong>Suggested size: 1280 × 720 pixels</strong>{" "}
+                (16:9). It fills the video area, looks sharp on large and high-resolution screens, and shows
+                whole without scrolling. Click Save changes below to publish it.
               </small>
             </div>
 
@@ -447,7 +448,10 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
               )}
               {uploadError?.i === i && <small className="notice">{uploadError.text}</small>}
               <small className="muted">
-                Up to {MAX_RESOURCES} pictures, shown as thumbnails under the forms. Pick several at once.
+                Up to {MAX_RESOURCES} pictures, shown under the forms at their own size. Pick several at once.{" "}
+                <strong>Suggested size: 720 × 405 pixels</strong> (16:9). That fits the page width on a
+                computer at full size, and is short enough to see the whole picture on a laptop screen without
+                scrolling. Larger or taller pictures still work but may need scrolling; phones shrink them to fit.
                 Add a title and a link if you want people to go somewhere when they click one; otherwise it
                 opens the picture. Click Save changes to publish.
               </small>
