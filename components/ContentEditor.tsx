@@ -211,6 +211,9 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
               />
             </label>
 
+            <section className="editor-group" aria-labelledby={`after-video-${i}`}>
+              <h3 id={`after-video-${i}`} className="editor-group-title">After the video</h3>
+              <p className="muted editor-group-note">What people see below the video and when they finish. All of it is optional.</p>
             <label className="field">
               <span>After they finish (optional)</span>
               <textarea
@@ -325,6 +328,7 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                 means no form section.
               </small>
             </div>
+            </section>
 
             <div className="editor-actions">
               <a className="link-btn" href={`/admin/preview/${i + 1}`} target="_blank" rel="noopener noreferrer">
