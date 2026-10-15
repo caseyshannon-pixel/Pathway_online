@@ -466,3 +466,12 @@ export async function resetProgress(personId: string): Promise<number> {
   snapshotCache = null; // so the dashboard reflects it right away
   return cards.length;
 }
+
+/** Reads any Planning Center API address (other products too), with the app's credentials. */
+export async function pcoGetUrl(url: string) {
+  if (!url.startsWith("https://api.planningcenteronline.com/")) throw new Error("Unexpected address");
+  const res = await fetch(url, { headers: { Authorization: authHeader() }, cache: "no-store" });
+  if (!res.ok) throw new Error(`Planning Center GET ${url} failed (${res.status})`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (await res.json()) as any;
+}

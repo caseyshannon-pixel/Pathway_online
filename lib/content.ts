@@ -46,18 +46,14 @@ export function parseYoutubeId(input: string): string {
   }
 }
 
-/** Only Church Center people forms, e.g. https://x.churchcenter.com/people/forms/123 */
+/** A Church Center page: a form, a registration, a group, giving... e.g. https://x.churchcenter.com/people/forms/123 */
 export function parseFormUrl(input: string): string {
   const s = input.trim();
   if (!s) return "";
   try {
     const u = new URL(s);
-    if (
-      u.protocol === "https:" &&
-      u.hostname.endsWith(".churchcenter.com") &&
-      /^\/people\/forms\/\d+\/?$/.test(u.pathname)
-    ) {
-      return u.origin + u.pathname.replace(/\/$/, "");
+    if (u.protocol === "https:" && u.hostname.endsWith(".churchcenter.com") && u.pathname.length > 1) {
+      return u.origin + u.pathname.replace(/\/$/, "") + u.search;
     }
   } catch {
     /* fall through */
@@ -108,7 +104,7 @@ export function validateSessions(input: unknown): Validated {
       if (!url) {
         return {
           ok: false,
-          error: `Session ${n}: each form needs a Church Center form link, like https://yourchurch.churchcenter.com/people/forms/123.`,
+          error: `Session ${n}: each form needs a Church Center link (a form, registration, group and so on), like https://yourchurch.churchcenter.com/people/forms/123.`,
         };
       }
       forms.push({

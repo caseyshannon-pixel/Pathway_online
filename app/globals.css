@@ -647,3 +647,28 @@ h1, h2 {
 
 /* Admin shortcut under the video */
 .admin-shortcut { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+
+/* Planning Center link finder */
+.finder-dialog { width: min(94vw, 560px); }
+.finder-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.finder-chip {
+  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  font: inherit; font-size: 0.88rem; color: var(--text); cursor: pointer;
+}
+.finder-chip.is-current { background: #2266f7; border-color: #2266f7; color: #fff; }
+.finder-search {
+  width: 100%; font: inherit; padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--text);
+}
+.finder-state { min-height: 8px; margin-top: 8px; }
+.finder-results { list-style: none; margin: 8px 0 0; padding: 0; max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; overscroll-behavior: contain; }
+.finder-results:empty { display: none; }
+.finder-results li + li { border-top: 1px solid var(--line); }
+.finder-item {
+  display: grid; gap: 2px; width: 100%; text-align: left; padding: 10px 12px; background: var(--surface);
+  border: 0; font: inherit; color: var(--text); cursor: pointer;
+}
+.finder-item:hover, .finder-item:focus-visible { background: #eef4ff; }
+.finder-name { font-weight: 700; }
+.finder-meta { font-size: 0.82rem; color: var(--muted); }
+.finder-url { font-size: 0.78rem; color: var(--muted); overflow-wrap: anywhere; }
