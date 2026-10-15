@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@/lib/course";
 import { shrinkImage } from "@/lib/shrinkImage";
+import PcoLinkFinder from "./PcoLinkFinder";
 import { DEFAULT_FORM_NOTE, type SessionResource } from "@/lib/course";
 
 const MAX_SESSIONS = 20;
@@ -329,7 +330,7 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                     />
                   </label>
                   <label className="field form-card-link">
-                    <span>Form link</span>
+                    <span>Link</span>
                     <input
                       placeholder="https://yourchurch.churchcenter.com/people/forms/123"
                       value={f.url}
@@ -337,6 +338,19 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                         update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, url: e.target.value } : x)) })
                       }
                     />
+                    <PcoLinkFinder
+                      onPick={(item) =>
+                        update(i, {
+                          forms: s.forms.map((x, m) =>
+                            m === k ? { ...x, url: item.url, title: x.title || item.name } : x,
+                          ),
+                        })
+                      }
+                    />
+                    <small className="muted">
+                      Paste a Church Center link, or use Find in Planning Center to search People forms and
+                      Registrations.
+                    </small>
                   </label>
                   <label className="field form-card-link">
                     <span>Note above the button</span>

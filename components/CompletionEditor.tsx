@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CongratsCard from "./CongratsCard";
 import { shrinkImage } from "@/lib/shrinkImage";
+import PcoLinkFinder from "./PcoLinkFinder";
 import { DEFAULT_COMPLETION, type CompletionContent } from "@/lib/completionDefaults";
 
 const MAX_GIF_BYTES = 4_000_000;
@@ -127,6 +128,15 @@ export default function CompletionEditor({ initial }: { initial: CompletionConte
                 value={a.url}
                 onChange={(e) => set({ actions: c.actions.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })}
               />
+              <PcoLinkFinder
+                onPick={(item) =>
+                  set({
+                    actions: c.actions.map((x, j) =>
+                      j === i ? { ...x, url: item.url, label: x.label || item.name.slice(0, 40) } : x,
+                    ),
+                  })
+                }
+              />
               <button
                 type="button"
                 className="link-btn"
@@ -142,7 +152,7 @@ export default function CompletionEditor({ initial }: { initial: CompletionConte
               + Add a button
             </button>
           )}
-          <small className="muted">Buttons open in a new tab. Use them for the next step, like a group or a serving form.</small>
+          <small className="muted">Buttons open in a new tab. Type a link, or use Find in Planning Center to search People forms and Registrations.</small>
         </div>
 
         <div className="editor-footer">
