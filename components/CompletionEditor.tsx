@@ -152,7 +152,7 @@ export default function CompletionEditor({ initial }: { initial: CompletionConte
               + Add a button
             </button>
           )}
-          <small className="muted">Buttons open in a new tab. Type a link, or use Find in Planning Center to search People forms, Registrations, Groups and more.</small>
+          <small className="muted">Buttons open in a new tab. Type a link, or use Find in Planning Center to search People forms and Registrations.</small>
         </div>
 
         <div className="editor-footer">

@@ -348,8 +348,8 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                       }
                     />
                     <small className="muted">
-                      Paste a Church Center link, or use Find in Planning Center to search People forms,
-                      Registrations, Groups and more.
+                      Paste a Church Center link, or use Find in Planning Center to search People forms and
+                      Registrations.
                     </small>
                   </label>
                   <label className="field form-card-link">

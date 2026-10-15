@@ -6,7 +6,7 @@ import { rateLimit, tooMany } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
-const PRODUCTS = ["all", "people", "registrations", "groups", "publishing", "general"];
+const PRODUCTS = ["all", "people", "registrations"];
 
 export async function GET(req: NextRequest) {
   const session = await getSession();

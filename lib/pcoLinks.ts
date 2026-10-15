@@ -1,9 +1,9 @@
 // Server-only. A searchable list of Church Center links from Planning Center
-// (People forms, Registrations, Groups, Publishing series, and a few general pages).
+// (People forms and Registrations).
 
 import { pcoGetUrl } from "./pcoWorkflow";
 
-export type ProductKey = "people" | "registrations" | "groups" | "publishing" | "general";
+export type ProductKey = "people" | "registrations";
 
 export type LinkItem = {
   id: string;
@@ -17,13 +17,9 @@ export type LinkItem = {
 export const PRODUCT_LABELS: Record<ProductKey, string> = {
   people: "People forms",
   registrations: "Registrations",
-  groups: "Groups",
-  publishing: "Publishing",
-  general: "Church Center pages",
 };
 
 const API = "https://api.planningcenteronline.com";
-const CHURCH_CENTER = (process.env.CHURCH_CENTER_URL ?? "https://rockc3.churchcenter.com").replace(/\/$/, "");
 const CACHE_MS = 300_000;
 const cache = new Map<ProductKey, { at: number; items: LinkItem[] }>();
 
@@ -76,26 +72,7 @@ async function load(product: ProductKey): Promise<LinkItem[]> {
         );
       });
   }
-  if (product === "groups") {
-    const rows = await fetchAll("/groups/v2/groups");
-    return rows
-      .filter((r) => !r.attributes.archived_at && text(r.attributes.public_church_center_web_url))
-      .map((r) =>
-        item(r.id, text(r.attributes.name), text(r.attributes.public_church_center_web_url), r.attributes.listed === false ? "Unlisted" : ""),
-      );
-  }
-  if (product === "publishing") {
-    const rows = await fetchAll("/publishing/v2/series");
-    return rows
-      .filter((r) => text(r.attributes.church_center_url))
-      .map((r) => item(r.id, text(r.attributes.title), text(r.attributes.church_center_url), "Series"));
-  }
-  return [
-    item("giving", "Giving", `${CHURCH_CENTER}/giving`),
-    item("groups", "All groups", `${CHURCH_CENTER}/groups`),
-    item("registrations", "All registrations", `${CHURCH_CENTER}/registrations`),
-    item("calendar", "Calendar", `${CHURCH_CENTER}/calendar`),
-  ];
+  return [];
 }
 
 async function get(product: ProductKey): Promise<LinkItem[]> {
@@ -108,8 +85,7 @@ async function get(product: ProductKey): Promise<LinkItem[]> {
 
 /** Items matching the search, from one product or all. `failed` names products that couldn't be loaded. */
 export async function searchLinks(product: ProductKey | "all", query: string) {
-  const keys: ProductKey[] =
-    product === "all" ? ["people", "registrations", "groups", "publishing", "general"] : [product];
+  const keys: ProductKey[] = product === "all" ? ["people", "registrations"] : [product];
   const results = await Promise.allSettled(keys.map((k) => get(k)));
   const failed: string[] = [];
   let items: LinkItem[] = [];

@@ -15,9 +15,6 @@ const PRODUCTS = [
   { key: "all", label: "All" },
   { key: "people", label: "People" },
   { key: "registrations", label: "Registrations" },
-  { key: "groups", label: "Groups" },
-  { key: "publishing", label: "Publishing" },
-  { key: "general", label: "Church Center pages" },
 ];
 
 // A button that opens a pop-up where you search Planning Center for a link
