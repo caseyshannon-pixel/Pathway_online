@@ -12,6 +12,8 @@ const MAX_BYTES = 4_000_000; // stays under the host's request size limit
 function sniff(b: Uint8Array): { type: string; ext: string } | null {
   if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { type: "image/jpeg", ext: "jpg" };
   if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return { type: "image/png", ext: "png" };
+  const gif = String.fromCharCode(...b.slice(0, 6));
+  if (gif === "GIF87a" || gif === "GIF89a") return { type: "image/gif", ext: "gif" };
   const riff = String.fromCharCode(...b.slice(0, 4));
   const webp = String.fromCharCode(...b.slice(8, 12));
   if (riff === "RIFF" && webp === "WEBP") return { type: "image/webp", ext: "webp" };
@@ -47,7 +49,7 @@ export async function POST(req: NextRequest) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const kind = sniff(bytes);
   if (!kind) {
-    return NextResponse.json({ error: "Please upload a JPG, PNG or WebP image." }, { status: 400 });
+    return NextResponse.json({ error: "Please upload a JPG, PNG, WebP or GIF image." }, { status: 400 });
   }
 
   try {

@@ -4,8 +4,9 @@ import { getSessions } from "@/lib/content";
 import { getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
 import { formatLength } from "@/lib/duration";
-import Prose from "@/components/Prose";
 import WelcomeSection from "@/components/WelcomeSection";
+import CongratsCard from "@/components/CongratsCard";
+import { getCompletion } from "@/lib/completion";
 import { getWelcome } from "@/lib/welcome";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function Course() {
   const session = await getSession();
   if (!session) redirect("/");
 
-  const [sessions, welcome] = await Promise.all([getSessions(), getWelcome()]);
+  const [sessions, welcome, completion] = await Promise.all([getSessions(), getWelcome(), getCompletion()]);
 
   let progress: Progress | null = null;
   try {
@@ -46,12 +47,7 @@ export default async function Course() {
               <a className="btn" href="/course">Try Again</a>
             </>
           ) : finished ? (
-            <>
-              <p className="muted">You've finished Pathway. You can rewatch any session below.</p>
-              {sessions[sessions.length - 1]?.afterText && (
-                <Prose text={sessions[sessions.length - 1].afterText} />
-              )}
-            </>
+            <CongratsCard content={completion} afterText={sessions[sessions.length - 1]?.afterText ?? ""} />
           ) : (
             <p className="muted">
               {completed === 0

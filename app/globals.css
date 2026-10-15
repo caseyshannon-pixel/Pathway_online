@@ -632,3 +632,15 @@ h1, h2 {
 
 /* Actions beside a person in the move-forward search */
 .psearch-actions { display: grid; gap: 4px; justify-items: end; }
+
+/* Congratulations screen */
+.completion-card { margin-top: 24px; }
+.congrats-card {
+  margin: 18px 0 8px; border-radius: 16px; overflow: hidden; border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, white);
+}
+.congrats-image { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.congrats-body { padding: 22px 22px 24px; text-align: center; }
+.congrats-body h2 { margin: 0 0 10px; font-size: clamp(1.6rem, 5vw, 2.1rem); line-height: 1.15; }
+.congrats-body .prose p:last-child { margin-bottom: 0; }
+.congrats-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
