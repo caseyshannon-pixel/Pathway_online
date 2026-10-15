@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@/lib/course";
 import { shrinkImage } from "@/lib/shrinkImage";
-import { DEFAULT_FORM_NOTE } from "@/lib/course";
+import { DEFAULT_FORM_NOTE, type SessionResource } from "@/lib/course";
 
 const MAX_SESSIONS = 20;
+const MAX_RESOURCES = 8;
 
 
 const emptySession = (): Session => ({
@@ -19,6 +20,7 @@ const emptySession = (): Session => ({
   lengthSeconds: 0,
   thumbnailUrl: "",
   afterText: "",
+  resources: [],
 });
 
 export default function ContentEditor({ initial }: { initial: Session[] }) {
@@ -27,6 +29,36 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [uploading, setUploading] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<{ i: number; text: string } | null>(null);
+  const [uploadingResources, setUploadingResources] = useState<number | null>(null);
+
+  // Uploads one or more resource pictures for a session and adds them to its list.
+  async function uploadResources(i: number, files: File[]) {
+    setUploadingResources(i);
+    setUploadError(null);
+    const added: SessionResource[] = [];
+    try {
+      const room = MAX_RESOURCES - sessions[i].resources.length;
+      for (const file of files.slice(0, room)) {
+        const small = await shrinkImage(file);
+        const form = new FormData();
+        form.append("file", small, "resource.jpg");
+        const res = await fetch("/api/admin/thumbnail", { method: "POST", body: form });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Upload failed.");
+        added.push({ imageUrl: json.url, title: "", url: "" });
+      }
+    } catch (err) {
+      setUploadError({ i, text: err instanceof Error ? err.message : "Upload failed." });
+    } finally {
+      if (added.length > 0) {
+        setMessage(null);
+        setSessions((all) =>
+          all.map((s, j) => (j === i ? { ...s, resources: [...s.resources, ...added] } : s)),
+        );
+      }
+      setUploadingResources(null);
+    }
+  }
 
   async function uploadThumbnail(i: number, file: File) {
     setUploading(i);
@@ -355,6 +387,69 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
               <small className="muted">
                 Each form appears below the video, in this order, with its own heading and button. No forms
                 means no form section.
+              </small>
+            </div>
+
+            <div className="field" role="group" aria-labelledby={`resources-heading-${i}`}>
+              <span id={`resources-heading-${i}`}>Resource pictures (optional)</span>
+              {s.resources.length > 0 && (
+                <div className="resource-edit-grid">
+                  {s.resources.map((r, k) => (
+                    <div className="resource-card" key={`${r.imageUrl}-${k}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img className="resource-edit-thumb" src={r.imageUrl} alt="" />
+                      <input
+                        aria-label={`Resource ${k + 1} title`}
+                        placeholder="Title (optional)"
+                        maxLength={100}
+                        value={r.title}
+                        onChange={(e) =>
+                          update(i, { resources: s.resources.map((x, m) => (m === k ? { ...x, title: e.target.value } : x)) })
+                        }
+                      />
+                      <input
+                        aria-label={`Resource ${k + 1} link`}
+                        placeholder="Link when clicked (optional)"
+                        value={r.url}
+                        onChange={(e) =>
+                          update(i, { resources: s.resources.map((x, m) => (m === k ? { ...x, url: e.target.value } : x)) })
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="link-btn danger"
+                        onClick={() => update(i, { resources: s.resources.filter((_, m) => m !== k) })}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {s.resources.length < MAX_RESOURCES && (
+                <div className="thumb-actions">
+                  <label className="btn btn-secondary thumb-upload">
+                    {uploadingResources === i ? "Uploading…" : "Upload Pictures"}
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp"
+                      hidden
+                      disabled={uploadingResources !== null}
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files ?? []);
+                        e.target.value = "";
+                        if (files.length > 0) void uploadResources(i, files);
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+              {uploadError?.i === i && <small className="notice">{uploadError.text}</small>}
+              <small className="muted">
+                Up to {MAX_RESOURCES} pictures, shown as thumbnails under the forms. Pick several at once.
+                Add a title and a link if you want people to go somewhere when they click one; otherwise it
+                opens the picture. Click Save changes to publish.
               </small>
             </div>
             </section>

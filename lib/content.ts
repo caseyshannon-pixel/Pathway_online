@@ -4,11 +4,29 @@
 // (or Blob isn't set up), the defaults in ./course are used.
 
 import { readJson, writeJson } from "./blobStore";
-import { DEFAULT_SESSIONS, type Session, type SessionForm, type SessionLink } from "./course";
+import {
+  DEFAULT_SESSIONS,
+  type Session,
+  type SessionForm,
+  type SessionLink,
+  type SessionResource,
+} from "./course";
 
 const PATH = "pathway/course.json";
 export const MAX_SESSIONS = 20;
 export const MAX_FORMS = 5;
+export const MAX_RESOURCES = 8;
+
+/** Only pictures uploaded through the editor (they live in our public Blob store). */
+function ownBlobImage(input: string): string {
+  try {
+    const u = new URL(input);
+    if (u.protocol === "https:" && u.hostname.endsWith(".public.blob.vercel-storage.com")) return u.toString();
+  } catch {
+    /* invalid */
+  }
+  return "";
+}
 
 /** Accepts a bare 11-character id or any common YouTube link. Returns "" if neither. */
 export function parseYoutubeId(input: string): string {
@@ -102,6 +120,28 @@ export function validateSessions(input: unknown): Validated {
       });
     }
 
+    const resources: SessionResource[] = [];
+    const rawResources = Array.isArray(raw.resources) ? raw.resources.slice(0, MAX_RESOURCES) : [];
+    for (const r of rawResources as Record<string, unknown>[]) {
+      const imageUrl = ownBlobImage(str(r?.imageUrl, 500));
+      if (!imageUrl) {
+        return { ok: false, error: `Session ${n}: resource pictures must be uploaded with Upload Pictures.` };
+      }
+      const linkText = str(r?.url, 500);
+      let url = "";
+      if (linkText) {
+        try {
+          if (["http:", "https:"].includes(new URL(linkText).protocol)) url = linkText;
+        } catch {
+          /* invalid */
+        }
+        if (!url) {
+          return { ok: false, error: `Session ${n}: a resource link needs a full address starting with https://.` };
+        }
+      }
+      resources.push({ imageUrl, title: str(r?.title, 100), url });
+    }
+
     // Thumbnails must be ones uploaded through the editor (they live in our Blob store).
     const thumbText = str(raw.thumbnailUrl, 500);
     let thumbnailUrl = "";
@@ -150,6 +190,7 @@ export function validateSessions(input: unknown): Validated {
       lengthSeconds,
       thumbnailUrl,
       afterText: str(raw.afterText, 500),
+      resources,
     });
   }
   return { ok: true, sessions };
