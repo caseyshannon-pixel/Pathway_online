@@ -592,3 +592,11 @@ h1, h2 {
   .chapter-thumb { width: 64px; border-radius: 6px; }
   .chapter-next .chapter-thumb { width: 84px; }
 }
+
+/* One box for After they finish, Links and Church Center forms */
+.editor-group {
+  display: grid; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+}
+.editor-group-title { margin: 0; font-size: 1.05rem; }
+.editor-group-note { margin: -10px 0 0; font-size: 0.9rem; }
+.editor-group > .field + .field { border-top: 1px solid var(--line); padding-top: 16px; }
