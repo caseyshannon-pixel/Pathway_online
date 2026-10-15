@@ -600,3 +600,14 @@ h1, h2 {
 .editor-group-title { margin: 0; font-size: 1.05rem; }
 .editor-group-note { margin: -10px 0 0; font-size: 0.9rem; }
 .editor-group > .field + .field { border-top: 1px solid var(--line); padding-top: 16px; }
+
+/* One box under the video: completion message, notes, links and forms */
+.after-box { margin-top: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.after-part { padding: 18px 20px; }
+.after-part + .after-part { border-top: 1px solid var(--line); }
+.after-box h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.after-box .prose p:last-child { margin-bottom: 0; }
+.after-complete { background: #ecfdf3; color: #067647; }
+.after-complete-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.after-text { margin-top: 10px; }
+.after-text p { margin: 0 0 8px; color: var(--text); }

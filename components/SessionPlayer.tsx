@@ -23,6 +23,8 @@ type Props = {
   thumbnailUrl?: string;
   /** Shown in the completion banner (what happens next). */
   afterText?: string;
+  /** Notes, links and forms, shown in the same box as the completion message. */
+  children?: React.ReactNode;
 };
 
 // A session only counts if at least this much of the video was actually played.
@@ -57,6 +59,7 @@ export default function SessionPlayer({
   preview = false,
   thumbnailUrl = "",
   afterText = "",
+  children,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [done, setDone] = useState(alreadyCompleted);
@@ -226,13 +229,20 @@ export default function SessionPlayer({
           Sign In Again
         </a>
       )}
-      {done && (
-        <div className="done-banner" role="status">
-          <strong>
-            Session {session} complete{preview ? " (preview, nothing was saved)" : ""}.
-          </strong>
-          <a className="btn" href={nextHref}>{nextLabel}</a>
-          {afterText && <Prose text={afterText} className="done-after" />}
+      {(done || children) && (
+        <div className="after-box">
+          {done && (
+            <div className="after-part after-complete" role="status">
+              <div className="after-complete-row">
+                <strong>
+                  Session {session} complete{preview ? " (preview, nothing was saved)" : ""}.
+                </strong>
+                <a className="btn" href={nextHref}>{nextLabel}</a>
+              </div>
+              {afterText && <Prose text={afterText} className="after-text" />}
+            </div>
+          )}
+          {children}
         </div>
       )}
     </div>

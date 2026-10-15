@@ -19,6 +19,46 @@ export default function SessionCard({
   basePath: string;
   preview?: boolean;
 }) {
+  const notesPart =
+    session.notes || session.links.length > 0 ? (
+      <section className="after-part" key="notes">
+        <h2>Notes</h2>
+        <Prose text={session.notes} />
+        {session.links.length > 0 && (
+          <ul className="session-links">
+            {session.links.map((l, i) => (
+              <li key={i}>
+                <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    ) : null;
+
+  const formParts = session.forms.map((form, i) => (
+    <section className="after-part" key={`${form.url}-${i}`}>
+      <h2>{form.title || (session.forms.length > 1 ? `Form ${i + 1}` : "Next step")}</h2>
+      {i === 0 && (
+        <p className="muted">
+          {session.forms.length > 1 ? "These forms open" : "This form opens"} in Church Center. Sign in
+          with your Planning Center login and your information will be filled in for you.
+        </p>
+      )}
+      <a className="btn btn-cta" href={form.url} target="_blank" rel="noopener noreferrer">
+        {form.buttonLabel || "Open The Form"}
+      </a>
+    </section>
+  ));
+
+  // Completion message, notes, links and forms live together in one box under the video.
+  const afterContent = notesPart || formParts.length > 0 ? (
+    <>
+      {notesPart}
+      {formParts}
+    </>
+  ) : null;
+
   return (
     <div className="card">
       <h1>{session.title}</h1>
@@ -36,41 +76,15 @@ export default function SessionCard({
           nextHref={isLast ? basePath : `${basePath}/${session.number + 1}`}
           nextLabel={isLast ? "Back to sessions" : `Start Session ${session.number + 1}`}
           preview={preview}
-        />
+        >
+          {afterContent}
+        </SessionPlayer>
       ) : (
-        <p className="muted">This session's video isn't ready yet. Please check back soon.</p>
+        <>
+          <p className="muted">This session's video isn't ready yet. Please check back soon.</p>
+          {afterContent && <div className="after-box">{afterContent}</div>}
+        </>
       )}
-
-      {(session.notes || session.links.length > 0) && (
-        <section className="session-section">
-          <h2>Notes</h2>
-          <Prose text={session.notes} />
-          {session.links.length > 0 && (
-            <ul className="session-links">
-              {session.links.map((l, i) => (
-                <li key={i}>
-                  <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {session.forms.map((form, i) => (
-        <section className="session-section" key={`${form.url}-${i}`}>
-          <h2>{form.title || (session.forms.length > 1 ? `Form ${i + 1}` : "Next step")}</h2>
-          {i === 0 && (
-            <p className="muted">
-              {session.forms.length > 1 ? "These forms open" : "This form opens"} in Church Center. Sign in
-              with your Planning Center login and your information will be filled in for you.
-            </p>
-          )}
-          <a className="btn btn-cta" href={form.url} target="_blank" rel="noopener noreferrer">
-            {form.buttonLabel || "Open The Form"}
-          </a>
-        </section>
-      ))}
     </div>
   );
 }
