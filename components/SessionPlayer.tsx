@@ -23,12 +23,15 @@ type Props = {
   thumbnailUrl?: string;
   /** Shown in the completion banner (what happens next). */
   afterText?: string;
+  /** Admins: show a button to finish once 10% has been watched. */
+  adminShortcut?: boolean;
   /** Notes, links and forms, shown in the same box as the completion message. */
   children?: React.ReactNode;
 };
 
 // A session only counts if at least this much of the video was actually played.
 const REQUIRED_FRACTION = 0.85;
+const ADMIN_FRACTION = 0.1;
 
 const SKIPPED_MESSAGE =
   "It looks like part of the video was skipped. Replay it from the start to finish this session.";
@@ -59,6 +62,7 @@ export default function SessionPlayer({
   preview = false,
   thumbnailUrl = "",
   afterText = "",
+  adminShortcut = false,
   children,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -68,6 +72,7 @@ export default function SessionPlayer({
   const [tone, setTone] = useState<"info" | "error">("error");
   const [problem, setProblem] = useState<"none" | "retry" | "signin">("none");
   const finishRef = useRef<() => void>(undefined);
+  const [adminReady, setAdminReady] = useState(false);
   // With a thumbnail, YouTube's player only loads once someone presses play.
   const [started, setStarted] = useState(!thumbnailUrl);
 
@@ -109,7 +114,7 @@ export default function SessionPlayer({
       }
       await sendBeat();
       const duration = player?.getDuration?.() ?? 0;
-      if (duration > 0 && watched < duration * REQUIRED_FRACTION) {
+      if (duration > 0 && watched < duration * (adminShortcut ? ADMIN_FRACTION : REQUIRED_FRACTION)) {
         setTone("info");
         setMessage(SKIPPED_MESSAGE);
         return;
@@ -166,6 +171,8 @@ export default function SessionPlayer({
               stopTimer();
               timer = setInterval(() => {
                 watched += player?.getPlaybackRate?.() ?? 1;
+                const length = player?.getDuration?.() ?? 0;
+                if (adminShortcut && length > 0 && watched >= length * ADMIN_FRACTION) setAdminReady(true);
               }, 1000);
               void sendBeat();
               beatTimer = setInterval(() => void sendBeat(), 10_000);
@@ -189,7 +196,7 @@ export default function SessionPlayer({
         /* player already gone */
       }
     };
-  }, [session, youtubeId, alreadyCompleted, preview, started, thumbnailUrl]);
+  }, [session, youtubeId, alreadyCompleted, preview, started, thumbnailUrl, adminShortcut]);
 
   return (
     <div>
@@ -211,6 +218,16 @@ export default function SessionPlayer({
           </button>
         )}
       </div>
+      {adminShortcut && adminReady && !done && (
+        <div className="admin-shortcut">
+          <button type="button" className="btn btn-secondary" onClick={() => finishRef.current?.()}>
+            Admin: Mark Session Complete
+          </button>
+          <small className="muted">
+            Admins can move on after 10% of the video. This counts as a real completion.
+          </small>
+        </div>
+      )}
       {message && (
         <p
           className={tone === "info" ? "notice notice-info" : "notice"}

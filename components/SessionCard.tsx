@@ -11,6 +11,7 @@ export default function SessionCard({
   alreadyCompleted,
   basePath,
   preview = false,
+  adminShortcut = false,
 }: {
   session: Session;
   isLast: boolean;
@@ -18,6 +19,8 @@ export default function SessionCard({
   /** "/course" for people, "/admin/preview" for the admin preview */
   basePath: string;
   preview?: boolean;
+  /** Offer admins a button to finish after 10% of the video. */
+  adminShortcut?: boolean;
 }) {
   const notesPart =
     session.notes || session.links.length > 0 ? (
@@ -97,6 +100,7 @@ export default function SessionCard({
           nextHref={isLast ? basePath : `${basePath}/${session.number + 1}`}
           nextLabel={isLast ? "Finish Pathway" : `Start Session ${session.number + 1}`}
           preview={preview}
+          adminShortcut={adminShortcut}
         >
           {afterContent}
         </SessionPlayer>
