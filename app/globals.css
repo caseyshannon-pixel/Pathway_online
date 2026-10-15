@@ -574,3 +574,9 @@ h1, h2 {
 .check-row { display: flex; align-items: flex-start; gap: 10px; line-height: 1.4; cursor: pointer; }
 .check-row input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--accent); }
 .welcome-preview .card { padding: 20px; }
+
+/* Same look as the "Continue" button on the course page */
+.btn-cta {
+  background: var(--accent-strong); color: #fff; font-weight: 700; font-size: 1rem; padding: 12px 22px;
+}
+.btn-cta:hover { filter: brightness(0.94); }
