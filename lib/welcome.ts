@@ -15,18 +15,18 @@ export function validateWelcome(input: unknown): ValidatedWelcome {
   const raw = (input ?? {}) as Record<string, unknown>;
   const cleanPoints = (v: unknown) =>
     (Array.isArray(v) ? v : [])
-      .map((p) => str(p, 160))
+      .map((p) => str(p, 600))
       .filter(Boolean)
       .slice(0, 6);
   return {
     ok: true,
     content: {
       thankYouTitle: str(raw.thankYouTitle, 60) || DEFAULT_WELCOME.thankYouTitle,
-      thankYou: str(raw.thankYou, 800),
+      thankYou: str(raw.thankYou, 2000),
       expectTitle: str(raw.expectTitle, 60) || DEFAULT_WELCOME.expectTitle,
       expectPoints: cleanPoints(raw.expectPoints),
       whatNowTitle: str(raw.whatNowTitle, 60) || DEFAULT_WELCOME.whatNowTitle,
-      whatNow: str(raw.whatNow, 800),
+      whatNow: str(raw.whatNow, 2000),
       whatNowPoints: cleanPoints(raw.whatNowPoints),
       hideAfterStart: raw.hideAfterStart === true,
     },

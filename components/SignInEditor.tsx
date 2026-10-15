@@ -71,13 +71,14 @@ export default function SignInEditor({ initial }: { initial: SignInContent }) {
         </label>
 
         <div className="field" role="group" aria-labelledby="expect-heading">
-          <span id="expect-heading">What to expect (optional, up to 5 short points)</span>
+          <span id="expect-heading">What to expect (optional, up to 5 points)</span>
           {c.bullets.map((b, i) => (
             <div className="link-row bullet-row" key={i}>
-              <input
+              <textarea
+                rows={2}
                 aria-label={`Point ${i + 1}`}
                 value={b}
-                maxLength={100}
+                maxLength={400}
                 onChange={(e) => set({ bullets: c.bullets.map((x, j) => (j === i ? e.target.value : x)) })}
               />
               <button

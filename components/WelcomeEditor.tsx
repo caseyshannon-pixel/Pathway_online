@@ -52,7 +52,7 @@ export default function WelcomeEditor({
           <textarea
             rows={4}
             value={c.thankYou}
-            maxLength={800}
+            maxLength={2000}
             placeholder="For example: Thank you for taking this step. We're glad you're here."
             onChange={(e) => set({ thankYou: e.target.value })}
           />
@@ -64,13 +64,14 @@ export default function WelcomeEditor({
           <input value={c.expectTitle} maxLength={60} onChange={(e) => set({ expectTitle: e.target.value })} />
         </label>
         <div className="field" role="group" aria-labelledby="welcome-points-heading">
-          <span id="welcome-points-heading">What to expect (up to 6 short points)</span>
+          <span id="welcome-points-heading">What to expect (up to 6 points)</span>
           {c.expectPoints.map((p, i) => (
             <div className="link-row bullet-row" key={i}>
-              <input
+              <textarea
+                rows={2}
                 aria-label={`Point ${i + 1}`}
                 value={p}
-                maxLength={160}
+                maxLength={600}
                 onChange={(e) => set({ expectPoints: c.expectPoints.map((x, j) => (j === i ? e.target.value : x)) })}
               />
               <button
@@ -87,7 +88,7 @@ export default function WelcomeEditor({
               + Add a point
             </button>
           )}
-          <small className="muted">Leave the list empty to hide this part.</small>
+          <small className="muted">Each point can be up to 600 characters. Leave the list empty to hide this part.</small>
         </div>
 
         <label className="field">
@@ -99,20 +100,21 @@ export default function WelcomeEditor({
           <textarea
             rows={4}
             value={c.whatNow}
-            maxLength={800}
+            maxLength={2000}
             placeholder="For example: Start with Session 1 and work through them at your own pace."
             onChange={(e) => set({ whatNow: e.target.value })}
           />
           <small className="muted">Leave a blank line between paragraphs. Leave it empty to hide the message.</small>
         </label>
         <div className="field" role="group" aria-labelledby="welcome-now-heading">
-          <span id="welcome-now-heading">"What now" steps (optional, up to 6 short points)</span>
+          <span id="welcome-now-heading">"What now" steps (optional, up to 6 points)</span>
           {c.whatNowPoints.map((p, i) => (
             <div className="link-row bullet-row" key={i}>
-              <input
+              <textarea
+                rows={2}
                 aria-label={`Step ${i + 1}`}
                 value={p}
-                maxLength={160}
+                maxLength={600}
                 onChange={(e) => set({ whatNowPoints: c.whatNowPoints.map((x, j) => (j === i ? e.target.value : x)) })}
               />
               <button
@@ -129,7 +131,7 @@ export default function WelcomeEditor({
               + Add a step
             </button>
           )}
-          <small className="muted">The whole "What now" part hides when both the message and the steps are empty.</small>
+          <small className="muted">Each step can be up to 600 characters. The whole "What now" part hides when both the message and the steps are empty.</small>
         </div>
 
         <label className="check-row">
