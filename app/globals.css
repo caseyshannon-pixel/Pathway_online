@@ -680,3 +680,7 @@ h1, h2 {
 }
 .link-row-finder { grid-template-columns: 1fr 1.6fr auto auto; }
 @media (max-width: 760px) { .link-row-finder { grid-template-columns: 1fr; } }
+
+/* Need help? links */
+.help-link { margin: 10px 0 0; font-size: 0.92rem; }
+.help-link a, .signin-help a, .site-footer a { color: var(--accent-strong); }

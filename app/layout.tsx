@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Archivo_Black } from "next/font/google";
 import "./globals.css";
+import { getSession } from "@/lib/session";
+import HelpFooter from "@/components/HelpFooter";
 
 const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo" });
 const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400", variable: "--font-archivo-black" });
@@ -16,19 +18,14 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const rawHelp = process.env.HELP_EMAIL?.trim() ?? "";
-  const helpEmail = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(rawHelp) ? rawHelp : "";
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
 
   return (
     <html lang="en" className={`${archivo.variable} ${archivoBlack.variable}`}>
       <body>
         {children}
-        {helpEmail && (
-          <footer className="site-footer">
-            Need help? <a href={`mailto:${helpEmail}`}>Email {helpEmail}</a>
-          </footer>
-        )}
+        <HelpFooter name={session?.name ?? ""} />
       </body>
     </html>
   );

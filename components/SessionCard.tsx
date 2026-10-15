@@ -12,6 +12,7 @@ export default function SessionCard({
   basePath,
   preview = false,
   adminShortcut = false,
+  helpHref,
 }: {
   session: Session;
   isLast: boolean;
@@ -21,6 +22,8 @@ export default function SessionCard({
   preview?: boolean;
   /** Offer admins a button to finish after 10% of the video. */
   adminShortcut?: boolean;
+  /** A mailto: link for "Still stuck?" under error messages. */
+  helpHref?: string;
 }) {
   const notesPart =
     session.notes || session.links.length > 0 ? (
@@ -101,6 +104,7 @@ export default function SessionCard({
           nextLabel={isLast ? "Finish Pathway" : `Start Session ${session.number + 1}`}
           preview={preview}
           adminShortcut={adminShortcut}
+          helpHref={helpHref}
         >
           {afterContent}
         </SessionPlayer>

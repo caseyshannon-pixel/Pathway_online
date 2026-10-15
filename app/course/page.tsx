@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
 import { getProgress, type Progress } from "@/lib/pcoWorkflow";
+import { helpHref } from "@/lib/help";
+import HelpLink from "@/components/HelpLink";
 import TopBar from "@/components/TopBar";
 import { formatLength } from "@/lib/duration";
 import WelcomeSection from "@/components/WelcomeSection";
@@ -45,6 +47,7 @@ export default async function Course() {
                 We couldn't load your progress right now. Please try again in a moment.
               </p>
               <a className="btn" href="/course">Try Again</a>
+              <HelpLink href={helpHref({ name: session.name, path: "/course" })} />
             </>
           ) : finished ? (
             <CongratsCard content={completion} afterText={sessions[sessions.length - 1]?.afterText ?? ""} />
