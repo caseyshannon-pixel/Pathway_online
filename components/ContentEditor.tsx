@@ -311,7 +311,7 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                       rows={2}
                       maxLength={300}
                       disabled={f.hideNote}
-                      placeholder={i === 0 ? DEFAULT_FORM_NOTE : "Optional"}
+                      placeholder={k === 0 ? DEFAULT_FORM_NOTE : "Optional"}
                       value={f.note}
                       onChange={(e) =>
                         update(i, { forms: s.forms.map((x, m) => (m === k ? { ...x, note: e.target.value } : x)) })
