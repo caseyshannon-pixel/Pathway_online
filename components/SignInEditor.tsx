@@ -158,7 +158,10 @@ export default function SignInEditor({ initial }: { initial: SignInContent }) {
               </button>
             )}
           </div>
-          <small className="muted">Shown across the top of the card. A wide picture (about 16:9) fits best.</small>
+          <small className="muted">
+            Shown across the top of the card. <strong>Suggested size: 1280 × 720 pixels</strong> (16:9). It
+            appears about 460 pixels wide, so the whole picture shows on a phone or laptop without scrolling.
+          </small>
         </div>
 
         <div className="editor-footer">
