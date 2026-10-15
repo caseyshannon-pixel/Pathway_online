@@ -5,6 +5,8 @@ import CongratsCard from "./CongratsCard";
 import { shrinkImage } from "@/lib/shrinkImage";
 import { DEFAULT_COMPLETION, type CompletionContent } from "@/lib/completionDefaults";
 
+const MAX_GIF_BYTES = 4_000_000;
+
 export default function CompletionEditor({ initial }: { initial: CompletionContent }) {
   const [c, setC] = useState<CompletionContent>(initial);
   const [saving, setSaving] = useState(false);
@@ -20,9 +22,14 @@ export default function CompletionEditor({ initial }: { initial: CompletionConte
     setUploading(true);
     setMessage(null);
     try {
-      const small = await shrinkImage(file);
+      // A GIF is sent as it is: shrinking would turn it into a still picture.
+      const isGif = file.type === "image/gif";
+      if (isGif && file.size > MAX_GIF_BYTES) {
+        throw new Error("That GIF is too large. Try one under 4 MB (a shorter or smaller GIF).");
+      }
+      const toSend = isGif ? file : await shrinkImage(file);
       const form = new FormData();
-      form.append("file", small, "congratulations.jpg");
+      form.append("file", toSend, isGif ? "congratulations.gif" : "congratulations.jpg");
       const res = await fetch("/api/admin/thumbnail", { method: "POST", body: form });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Upload failed.");
@@ -80,7 +87,7 @@ export default function CompletionEditor({ initial }: { initial: CompletionConte
               {uploading ? "Uploading…" : c.imageUrl ? "Replace Picture" : "Upload Picture"}
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 hidden
                 disabled={uploading}
                 onChange={(e) => {
@@ -98,7 +105,8 @@ export default function CompletionEditor({ initial }: { initial: CompletionConte
           </div>
           <small className="muted">
             <strong>Suggested size: 1280 × 720 pixels</strong> (16:9). It fills the width of the screen and
-            shows whole without scrolling.
+            shows whole without scrolling. JPG, PNG, WebP and animated GIFs all work. A GIF must be under 4 MB
+            and is shown as you uploaded it, so keep it a sensible size.
           </small>
         </div>
 
