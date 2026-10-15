@@ -23,6 +23,19 @@ export default function WelcomeSection({ content }: { content: WelcomeContent })
           </ul>
         </div>
       )}
+      {(content.whatNow || content.whatNowPoints.length > 0) && (
+        <div className="welcome-block">
+          <h2>{content.whatNowTitle}</h2>
+          {content.whatNow && <Prose text={content.whatNow} />}
+          {content.whatNowPoints.length > 0 && (
+            <ul className="signin-bullets welcome-points">
+              {content.whatNowPoints.map((p, i) => (
+                <li key={i}>{p}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </section>
   );
 }

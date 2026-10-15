@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import WelcomeSection from "./WelcomeSection";
-import { DEFAULT_WELCOME, type WelcomeContent } from "@/lib/welcomeDefaults";
+import { DEFAULT_WELCOME, hasWelcomeContent, type WelcomeContent } from "@/lib/welcomeDefaults";
 
 export default function WelcomeEditor({
   initial,
@@ -90,6 +90,48 @@ export default function WelcomeEditor({
           <small className="muted">Leave the list empty to hide this part.</small>
         </div>
 
+        <label className="field">
+          <span>"What now" heading</span>
+          <input value={c.whatNowTitle} maxLength={60} onChange={(e) => set({ whatNowTitle: e.target.value })} />
+        </label>
+        <label className="field">
+          <span>"What now" message</span>
+          <textarea
+            rows={4}
+            value={c.whatNow}
+            maxLength={800}
+            placeholder="For example: Start with Session 1 and work through them at your own pace."
+            onChange={(e) => set({ whatNow: e.target.value })}
+          />
+          <small className="muted">Leave a blank line between paragraphs. Leave it empty to hide the message.</small>
+        </label>
+        <div className="field" role="group" aria-labelledby="welcome-now-heading">
+          <span id="welcome-now-heading">"What now" steps (optional, up to 6 short points)</span>
+          {c.whatNowPoints.map((p, i) => (
+            <div className="link-row bullet-row" key={i}>
+              <input
+                aria-label={`Step ${i + 1}`}
+                value={p}
+                maxLength={160}
+                onChange={(e) => set({ whatNowPoints: c.whatNowPoints.map((x, j) => (j === i ? e.target.value : x)) })}
+              />
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => set({ whatNowPoints: c.whatNowPoints.filter((_, j) => j !== i) })}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          {c.whatNowPoints.length < 6 && (
+            <button type="button" className="link-btn" onClick={() => set({ whatNowPoints: [...c.whatNowPoints, ""] })}>
+              + Add a step
+            </button>
+          )}
+          <small className="muted">The whole "What now" part hides when both the message and the steps are empty.</small>
+        </div>
+
         <label className="check-row">
           <input
             type="checkbox"
@@ -122,8 +164,8 @@ export default function WelcomeEditor({
           <div className="card">
             <h1>Welcome, {firstName}</h1>
             <WelcomeSection content={c} />
-            {c.thankYou === "" && c.expectPoints.length === 0 && (
-              <p className="muted">Nothing will show until you add a message or a point.</p>
+            {!hasWelcomeContent(c) && (
+              <p className="muted">Nothing will show until you add a message, a point or a step.</p>
             )}
           </div>
         </div>
