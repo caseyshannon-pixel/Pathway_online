@@ -66,7 +66,7 @@ export default function SessionCard({
               with your Planning Center login and your information will be filled in for you.
             </p>
           )}
-          <a className="btn btn-dark" href={form.url} target="_blank" rel="noopener noreferrer">
+          <a className="btn" href={form.url} target="_blank" rel="noopener noreferrer">
             {form.buttonLabel || "Open The Form"}
           </a>
         </section>

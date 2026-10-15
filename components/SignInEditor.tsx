@@ -70,8 +70,8 @@ export default function SignInEditor({ initial }: { initial: SignInContent }) {
           <textarea rows={4} value={c.intro} maxLength={600} onChange={(e) => set({ intro: e.target.value })} />
         </label>
 
-        <fieldset className="field">
-          <legend>What to expect (optional, up to 5 short points)</legend>
+        <div className="field" role="group" aria-labelledby="expect-heading">
+          <span id="expect-heading">What to expect (optional, up to 5 short points)</span>
           {c.bullets.map((b, i) => (
             <div className="link-row bullet-row" key={i}>
               <input
@@ -94,7 +94,7 @@ export default function SignInEditor({ initial }: { initial: SignInContent }) {
               + Add a point
             </button>
           )}
-        </fieldset>
+        </div>
 
         <label className="field">
           <span>Button label</span>

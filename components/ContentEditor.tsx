@@ -223,8 +223,8 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
               <small className="muted">Shown when someone completes this session. Great for the last one.</small>
             </label>
 
-            <fieldset className="field">
-              <legend>Links</legend>
+            <div className="field" role="group" aria-labelledby={`links-heading-${i}`}>
+              <span id={`links-heading-${i}`}>Links (optional)</span>
               {s.links.map((l, k) => (
                 <div className="link-row" key={k}>
                   <input
@@ -262,10 +262,11 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                   + Add a link
                 </button>
               )}
-            </fieldset>
+              <small className="muted">Shown under the notes. Add up to 10.</small>
+            </div>
 
-            <fieldset className="field">
-              <legend>Church Center forms (optional)</legend>
+            <div className="field" role="group" aria-labelledby={`forms-heading-${i}`}>
+              <span id={`forms-heading-${i}`}>Church Center forms (optional)</span>
               {s.forms.map((f, k) => (
                 <div className="form-card" key={k}>
                   <label className="field">
@@ -323,7 +324,7 @@ export default function ContentEditor({ initial }: { initial: Session[] }) {
                 Each form appears below the video, in this order, with its own heading and button. No forms
                 means no form section.
               </small>
-            </fieldset>
+            </div>
 
             <div className="editor-actions">
               <a className="link-btn" href={`/admin/preview/${i + 1}`} target="_blank" rel="noopener noreferrer">
