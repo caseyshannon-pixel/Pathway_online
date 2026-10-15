@@ -97,6 +97,10 @@ export default async function Course() {
                   <span className={`chapter-num${isDone ? " is-done" : ""}`}>
                     {isDone ? "✓" : s.number}
                   </span>
+                  {s.thumbnailUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="chapter-thumb" src={s.thumbnailUrl} alt="" loading="lazy" />
+                  )}
                   <span className="chapter-title">
                     {isNext && <small className="chapter-eyebrow">Up next</small>}
                     {s.title}

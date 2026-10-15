@@ -580,3 +580,15 @@ h1, h2 {
   background: var(--accent-strong); color: #fff; font-weight: 700; font-size: 1rem; padding: 12px 22px;
 }
 .btn-cta:hover { filter: brightness(0.94); }
+
+/* Session thumbnails in the course list */
+.chapter-thumb {
+  flex: none; width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px;
+  border: 1px solid var(--line); background: #eceae8;
+}
+.chapter-next .chapter-thumb { width: 128px; }
+.chapter-locked .chapter-thumb { opacity: 0.55; filter: grayscale(0.7); }
+@media (max-width: 560px) {
+  .chapter-thumb { width: 64px; border-radius: 6px; }
+  .chapter-next .chapter-thumb { width: 84px; }
+}
