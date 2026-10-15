@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import { isAdmin } from "@/lib/admin";
 import { getSessions } from "@/lib/content";
 import { getProgress, type Progress } from "@/lib/pcoWorkflow";
 import TopBar from "@/components/TopBar";
@@ -59,6 +60,7 @@ export default async function SessionPage({
           isLast={isLast}
           alreadyCompleted={alreadyCompleted}
           basePath="/course"
+          adminShortcut={await isAdmin(user)}
         />
       </main>
     </>

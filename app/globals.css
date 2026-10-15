@@ -644,3 +644,6 @@ h1, h2 {
 .congrats-body h2 { margin: 0 0 10px; font-size: clamp(1.6rem, 5vw, 2.1rem); line-height: 1.15; }
 .congrats-body .prose p:last-child { margin-bottom: 0; }
 .congrats-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+
+/* Admin shortcut under the video */
+.admin-shortcut { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }

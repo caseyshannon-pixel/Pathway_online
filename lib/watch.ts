@@ -15,6 +15,8 @@ const MAX_CREDIT_SECONDS = 20; // most time one beat can add
 const MAX_GAP_MS = 45_000; // a longer gap means paused or closed: nothing credited
 const REQUIRED_FRACTION = 0.85; // same bar the player uses
 const MIN_REQUIRED_SECONDS = 60; // floor when the video's length isn't known
+const ADMIN_FRACTION = 0.1; // admins only need this much
+const ADMIN_MIN_SECONDS = 10;
 
 type Watch = { pid: string; s: number; w: number; t: number; d: number };
 
@@ -74,10 +76,18 @@ export async function recordBeat(personId: string, session: number, rate: number
 }
 
 /** Checks the credited time against what finishing needs. */
-export async function hasWatchedEnough(personId: string, session: number, knownLengthSeconds: number) {
+export async function hasWatchedEnough(
+  personId: string,
+  session: number,
+  knownLengthSeconds: number,
+  adminShortcut = false,
+) {
   const prev = await read(personId, session);
   const watched = prev?.w ?? 0;
   const length = knownLengthSeconds > 0 ? knownLengthSeconds : prev?.d ?? 0;
-  const required = Math.max(MIN_REQUIRED_SECONDS, Math.round(length * REQUIRED_FRACTION) - 10);
+  // Admins can finish after 10% of the video, so they can move through the course quickly.
+  const fraction = adminShortcut ? ADMIN_FRACTION : REQUIRED_FRACTION;
+  const floor = adminShortcut ? ADMIN_MIN_SECONDS : MIN_REQUIRED_SECONDS;
+  const required = Math.max(floor, Math.round(length * fraction) - 10);
   return { ok: watched >= required, watched, required };
 }

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
 import { forbidden, rateLimit, sameOrigin, tooMany } from "@/lib/security";
 import { hasWatchedEnough } from "@/lib/watch";
+import { isAdmin } from "@/lib/admin";
 import { completeSession } from "@/lib/pcoWorkflow";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,12 @@ export async function POST(req: NextRequest) {
   }
 
   // The browser's say-so isn't enough: the server must have counted enough playing time.
-  const watch = await hasWatchedEnough(session.personId, number, sessions[number - 1].lengthSeconds);
+  const watch = await hasWatchedEnough(
+    session.personId,
+    number,
+    sessions[number - 1].lengthSeconds,
+    await isAdmin(session),
+  );
   if (!watch.ok) return NextResponse.json({ error: "not_watched" }, { status: 400 });
 
   try {
