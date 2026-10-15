@@ -611,3 +611,7 @@ h1, h2 {
 .after-complete-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .after-text { margin-top: 10px; }
 .after-text p { margin: 0 0 8px; color: var(--text); }
+
+/* Longer, multi-line points */
+.bullet-row { align-items: start; }
+.bullet-row textarea { resize: vertical; min-height: 64px; line-height: 1.4; }

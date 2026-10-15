@@ -19,7 +19,7 @@ export function validateSignIn(input: unknown): ValidatedSignIn {
   if (!buttonLabel) return { ok: false, error: "The sign-in button needs a label." };
 
   const bullets = (Array.isArray(raw.bullets) ? raw.bullets : [])
-    .map((b) => str(b, 100))
+    .map((b) => str(b, 400))
     .filter(Boolean)
     .slice(0, 5);
 
