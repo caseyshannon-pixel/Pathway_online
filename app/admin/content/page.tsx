@@ -4,6 +4,8 @@ import { isAdmin } from "@/lib/admin";
 import { getSessions, storageConfigured } from "@/lib/content";
 import TopBar from "@/components/TopBar";
 import ContentEditor from "@/components/ContentEditor";
+import CompletionEditor from "@/components/CompletionEditor";
+import { getCompletion } from "@/lib/completion";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +13,7 @@ export default async function AdminContent() {
   const session = await getSession();
   if (!(await isAdmin(session))) notFound();
 
-  const sessions = await getSessions();
+  const [sessions, completion] = await Promise.all([getSessions(), getCompletion()]);
 
   return (
     <>
@@ -30,6 +32,15 @@ export default async function AdminContent() {
             </p>
           )}
           <ContentEditor initial={sessions} />
+        </div>
+
+        <div className="card completion-card" id="congratulations">
+          <h2>Congratulations screen</h2>
+          <p className="muted">
+            Shown on the course page when someone has finished every session. It has its own Save button, so
+            saving here doesn't affect the sessions above.
+          </p>
+          <CompletionEditor initial={completion} />
         </div>
       </main>
     </>
