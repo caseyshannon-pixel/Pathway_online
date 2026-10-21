@@ -475,3 +475,11 @@ export async function pcoGetUrl(url: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (await res.json()) as any;
 }
+
+/** Sends an email to the person on a workflow card, through Planning Center. */
+export async function sendCardEmail(personId: string, cardId: string, subject: string, note: string) {
+  await pco(`/people/${personId}/workflow_cards/${cardId}/send_email`, {
+    method: "POST",
+    body: JSON.stringify({ data: { attributes: { subject, note } } }),
+  });
+}

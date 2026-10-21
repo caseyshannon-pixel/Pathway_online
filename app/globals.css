@@ -764,3 +764,9 @@ h1, h2 {
   .waypoint.is-next .chapter-title { flex: 1 1 auto; }
   .waypoint.is-next .chapter-cta { margin-top: 0; }
 }
+
+/* Nudges admin page */
+.nudge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.nudge-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.nudge-list { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; }
+.nudge-due { margin-top: 6px; }
