@@ -65,42 +65,23 @@ export default async function Course() {
             </p>
           )}
 
-          {progress !== null && (
-            <div
-              className="progress"
-              role="progressbar"
-              aria-label="Pathway progress"
-              aria-valuemin={0}
-              aria-valuemax={sessions.length}
-              aria-valuenow={Math.min(completed, sessions.length)}
-              aria-valuetext={`${Math.min(completed, sessions.length)} of ${sessions.length} sessions completed`}
-            >
-              {sessions.map((s) => (
-                <div key={s.number} className="progress-segment">
-                  <span className={`progress-fill${s.number <= completed ? " is-done" : ""}`} />
-                  <span className="progress-label" aria-hidden="true">{s.number}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <ol className="chapters">
-            {sessions.map((s) => {
+          <ol
+            className="trail"
+            aria-label={`Pathway sessions, ${Math.min(completed, sessions.length)} of ${sessions.length} finished`}
+          >
+            {sessions.map((s, index) => {
               const isDone = s.number <= completed;
               const isNext = progress !== null && s.number === completed + 1;
               const open = progress !== null && s.number <= completed + 1;
               const status = isDone ? "Completed" : isNext ? "Up next" : "Locked";
               const inner = (
                 <>
-                  <span className={`chapter-num${isDone ? " is-done" : ""}`}>
-                    {isDone ? "✓" : s.number}
-                  </span>
                   {s.thumbnailUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img className="chapter-thumb" src={s.thumbnailUrl} alt="" loading="lazy" />
                   )}
                   <span className="chapter-title">
-                    {isNext && <small className="chapter-eyebrow">Up next</small>}
+                    {isNext && <small className="chapter-eyebrow">You are here</small>}
                     {s.title}
                     {(() => {
                       const hint = [
@@ -115,12 +96,17 @@ export default async function Course() {
                   {isNext ? (
                     <span className="chapter-cta">{completed === 0 ? "Start" : "Continue"}</span>
                   ) : (
-                    <span className={`status status-${isDone ? "done" : "locked"}`}>{status}</span>
+                    <span className="sr-only">{status}</span>
                   )}
                 </>
               );
               return (
-                <li key={s.number}>
+                <li
+                  key={s.number}
+                  className={`waypoint ${isDone ? "is-done" : isNext ? "is-next" : "is-locked"}`}
+                  style={{ "--i": index } as React.CSSProperties}
+                >
+                  <span className="waypoint-node">{isDone ? "✓" : s.number}</span>
                   {open ? (
                     <a className={`chapter chapter-link${isNext ? " chapter-next" : ""}`} href={`/course/${s.number}`}>
                       {inner}

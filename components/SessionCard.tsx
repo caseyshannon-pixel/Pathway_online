@@ -13,6 +13,8 @@ export default function SessionCard({
   preview = false,
   adminShortcut = false,
   helpHref,
+  total,
+  completed = 0,
 }: {
   session: Session;
   isLast: boolean;
@@ -24,6 +26,9 @@ export default function SessionCard({
   adminShortcut?: boolean;
   /** A mailto: link for "Still stuck?" under error messages. */
   helpHref?: string;
+  /** How many sessions there are, and how many this person has finished (for the trail marker). */
+  total?: number;
+  completed?: number;
 }) {
   const notesPart =
     session.notes || session.links.length > 0 ? (
@@ -88,6 +93,17 @@ export default function SessionCard({
 
   return (
     <div className="card">
+      {total && total > 1 && (
+        <div className="trail-strip" role="img" aria-label={`Session ${session.number} of ${total}`}>
+          {Array.from({ length: total }, (_, i) => (
+            <span
+              key={i}
+              className={`trail-dot${i + 1 <= completed ? " is-done" : ""}${i + 1 === session.number ? " is-here" : ""}`}
+            />
+          ))}
+          <span className="trail-strip-label">Session {session.number} of {total}</span>
+        </div>
+      )}
       <h1>{session.title}</h1>
       {session.lengthSeconds > 0 && (
         <p className="muted session-length">{formatLength(session.lengthSeconds)} video</p>

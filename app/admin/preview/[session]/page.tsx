@@ -49,6 +49,8 @@ export default async function PreviewSession({
           isLast={number === sessions.length}
           alreadyCompleted={false}
           basePath="/admin/preview"
+          total={sessions.length}
+          completed={number - 1}
           preview
           adminShortcut
         />

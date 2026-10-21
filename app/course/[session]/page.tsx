@@ -63,6 +63,8 @@ export default async function SessionPage({
           isLast={isLast}
           alreadyCompleted={alreadyCompleted}
           basePath="/course"
+          total={sessions.length}
+          completed={progress.completed}
           adminShortcut={await isAdmin(user)}
           helpHref={helpHref({ name: user.name, path: `/course/${number}` })}
         />

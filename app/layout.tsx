@@ -4,7 +4,7 @@ import "./globals.css";
 import { getSession } from "@/lib/session";
 import HelpFooter from "@/components/HelpFooter";
 
-const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo" });
+const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo", axes: ["wdth"] });
 const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400", variable: "--font-archivo-black" });
 
 export const metadata: Metadata = {
