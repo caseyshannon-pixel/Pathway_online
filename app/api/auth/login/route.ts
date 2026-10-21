@@ -8,7 +8,7 @@ import { safeNext } from "@/lib/nextPath";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (!rateLimit(`login:${clientIp(req)}`, 30, 60_000)) return tooMany();
+  if (!rateLimit(`login:${clientIp(req)}`, 1000, 60_000)) return tooMany();
   const origin = appOrigin(req.nextUrl.origin);
   const state = randomBytes(16).toString("hex");
 
