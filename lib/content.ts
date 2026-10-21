@@ -195,12 +195,19 @@ export function validateSessions(input: unknown): Validated {
 export { storageConfigured } from "./blobStore";
 
 /** Current course content: saved copy if there is one, otherwise the defaults. */
+const SESSIONS_CACHE_MS = 30_000;
+let sessionsCache: { at: number; value: Session[] } | null = null;
+
 export async function getSessions(): Promise<Session[]> {
+  // Read from storage at most every 30 seconds per server; every page and every
+  // "still watching" ping needs this list.
+  if (sessionsCache && Date.now() - sessionsCache.at < SESSIONS_CACHE_MS) return sessionsCache.value;
   try {
     const data = await readJson(PATH);
-    if (data === null) return DEFAULT_SESSIONS;
-    const checked = validateSessions(data);
-    return checked.ok ? checked.sessions : DEFAULT_SESSIONS;
+    const checked = data === null ? null : validateSessions(data);
+    const value = checked?.ok ? checked.sessions : DEFAULT_SESSIONS;
+    sessionsCache = { at: Date.now(), value };
+    return value;
   } catch (err) {
     console.error("Could not load saved course content, using defaults:", err);
     return DEFAULT_SESSIONS;
@@ -209,4 +216,5 @@ export async function getSessions(): Promise<Session[]> {
 
 export async function saveSessions(sessions: Session[]) {
   await writeJson(PATH, sessions);
+  sessionsCache = { at: Date.now(), value: sessions };
 }

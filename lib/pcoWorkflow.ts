@@ -39,9 +39,33 @@ async function allWorkflowIds(): Promise<string[]> {
   return [...new Set([defaultWorkflowId(), ...Object.values(map)])];
 }
 
+const MAX_ATTEMPTS = 3;
+const MAX_WAIT_MS = 4000;
+
+/**
+ * Fetches from Planning Center, and if it answers "too many requests" (429) waits as long
+ * as it asks (Retry-After, capped) and tries again. A 429 means the request was not
+ * processed, so retrying is safe for any method. Temporary server errors (5xx) are only
+ * retried for reads.
+ */
+async function pcoFetch(url: string, init: RequestInit): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url, init);
+    const slowDown = res.status === 429;
+    const hiccup = res.status >= 500 && (init.method ?? "GET") === "GET";
+    if ((!slowDown && !hiccup) || attempt >= MAX_ATTEMPTS) return res;
+
+    const asked = Number(res.headers.get("retry-after"));
+    const base = Number.isFinite(asked) && asked > 0 ? asked * 1000 : 500 * 2 ** (attempt - 1);
+    const wait = Math.min(base, MAX_WAIT_MS) + Math.random() * 400; // jitter so retries don't all land at once
+    console.warn(`Planning Center answered ${res.status}; retrying in ${Math.round(wait)} ms (attempt ${attempt}).`);
+    await new Promise((resolve) => setTimeout(resolve, wait));
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function pco(path: string, init: RequestInit = {}): Promise<any> {
-  const res = await fetch(API + path, {
+  const res = await pcoFetch(API + path, {
     ...init,
     headers: {
       Authorization: authHeader(),
@@ -175,10 +199,19 @@ export async function getProgress(
   personId: string,
   opts: { create: false },
 ): Promise<Omit<Progress, "cardId"> & { cardId: string | null }>;
+export async function getProgress(personId: string, opts: { fresh: true }): Promise<Progress>;
 export async function getProgress(
   personId: string,
-  opts: { create?: boolean } = {},
+  opts: { create?: boolean; fresh?: boolean } = {},
 ) {
+  // Page views reuse a very recent answer, so moving between pages doesn't ask Planning Center again.
+  // Anything that is about to change progress passes `fresh: true` to skip this.
+  const useCache = !opts.fresh && opts.create !== false;
+  if (useCache) {
+    const hit = progressCache.get(personId);
+    if (hit && Date.now() - hit.at < PROGRESS_TTL_MS) return hit.value;
+  }
+
   const [existing, sessions] = await Promise.all([findCard(personId), getSessions()]);
   const total = sessions.length;
   if (!existing && opts.create === false) {
@@ -187,7 +220,26 @@ export async function getProgress(
   const card = existing ?? (await createCard(personId, await workflowForPerson(personId)));
   const stepIds = await getStepIds(workflowOf(card) || defaultWorkflowId());
 
-  return { completed: completedFrom(card, stepIds, total), total, cardId: card.id };
+  const result = { completed: completedFrom(card, stepIds, total), total, cardId: card.id };
+  if (opts.create !== false) rememberProgress(personId, result);
+  return result;
+}
+
+// ---- A short memory of each person's progress (per server; a minute at most) ----
+const PROGRESS_TTL_MS = 60_000;
+const progressCache = new Map<string, { at: number; value: Progress }>();
+
+function rememberProgress(personId: string, value: Progress) {
+  if (progressCache.size > 5000) {
+    const cutoff = Date.now() - PROGRESS_TTL_MS;
+    for (const [id, v] of progressCache) if (v.at < cutoff) progressCache.delete(id);
+    if (progressCache.size > 5000) progressCache.clear();
+  }
+  progressCache.set(personId, { at: Date.now(), value });
+}
+
+export function forgetProgress(personId: string) {
+  progressCache.delete(personId);
 }
 
 /**
@@ -195,14 +247,16 @@ export async function getProgress(
  * anything else is ignored, so replaying old sessions never moves the card.
  */
 export async function completeSession(personId: string, session: number): Promise<Progress> {
-  const progress = await getProgress(personId);
+  const progress = await getProgress(personId, { fresh: true }); // never trust the short memory when changing progress
   if (session !== progress.completed + 1) return progress;
 
   await pco(`/people/${personId}/workflow_cards/${progress.cardId}/promote`, {
     method: "POST",
     body: JSON.stringify({}),
   });
-  return { ...progress, completed: progress.completed + 1 };
+  const moved = { ...progress, completed: progress.completed + 1 };
+  rememberProgress(personId, moved);
+  return moved;
 }
 
 export type PersonDetail = {
@@ -319,7 +373,7 @@ export async function getProgressMany(
 
 /** Admin action: moves a person's card one step forward, whatever session they're on. */
 export async function advanceOneStep(personId: string): Promise<Progress> {
-  const progress = await getProgress(personId);
+  const progress = await getProgress(personId, { fresh: true });
   if (progress.completed >= progress.total) return progress;
   return completeSession(personId, progress.completed + 1);
 }
@@ -464,13 +518,14 @@ export async function resetProgress(personId: string): Promise<number> {
     await pco(`/people/${personId}/workflow_cards/${c.id}/remove`, { method: "POST", body: JSON.stringify({}) });
   }
   snapshotCache = null; // so the dashboard reflects it right away
+  forgetProgress(personId);
   return cards.length;
 }
 
 /** Reads any Planning Center API address (other products too), with the app's credentials. */
 export async function pcoGetUrl(url: string) {
   if (!url.startsWith("https://api.planningcenteronline.com/")) throw new Error("Unexpected address");
-  const res = await fetch(url, { headers: { Authorization: authHeader() }, cache: "no-store" });
+  const res = await pcoFetch(url, { headers: { Authorization: authHeader() }, cache: "no-store" });
   if (!res.ok) throw new Error(`Planning Center GET ${url} failed (${res.status})`);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (await res.json()) as any;
