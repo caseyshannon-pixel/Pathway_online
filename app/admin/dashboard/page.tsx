@@ -29,7 +29,7 @@ function PersonRow({ c, detail }: { c: CardInfo; detail: string }) {
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string }>;
+  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string; view?: string }>;
 }) {
   const session = await getSession();
   if (!(await isAdmin(session))) notFound();
@@ -69,8 +69,45 @@ export default async function Dashboard({
   const adminQuery = showAdmins ? "&admins=1" : "";
   const stats = buildStats(cards, titles, days);
   const wfQuery = (wf ? `&wf=${wf}` : "") + adminQuery;
+  // Clicking one of the four boxes at the top lists the people behind that number.
+  const VIEWS = ["started", "progress", "completed", "stalled"] as const;
+  type View = (typeof VIEWS)[number];
+  const view: View | null = VIEWS.find((v) => v === params.view) ?? null;
   const picked = Number(params.session);
-  const detail = Number.isInteger(picked) && picked >= 1 && picked <= total ? picked : null;
+  const detail = !view && Number.isInteger(picked) && picked >= 1 && picked <= total ? picked : null;
+
+  const DAY = 86_400_000;
+  const now = Date.now();
+  const quietDays = (c: CardInfo) => Math.max(0, Math.floor((now - Date.parse(c.movedAt || c.createdAt)) / DAY));
+  const byTime = (a: CardInfo, b: CardInfo, key: "createdAt" | "movedAt", dir: 1 | -1) =>
+    dir * ((Date.parse(a[key]) || 0) - (Date.parse(b[key]) || 0));
+  const viewRows: { c: CardInfo; detail: string }[] =
+    view === "started"
+      ? [...cards].sort((a, b) => byTime(b, a, "createdAt", 1)).map((c) => ({
+          c,
+          detail: `${c.completed >= total ? "Finished" : `On session ${c.completed + 1}`} · joined ${fmt(c.createdAt)}`,
+        }))
+      : view === "progress"
+        ? cards
+            .filter((c) => c.completed < total)
+            .sort((a, b) => byTime(a, b, "movedAt", 1)) // quiet the longest first
+            .map((c) => ({ c, detail: `Session ${c.completed + 1} · quiet ${quietDays(c)} ${quietDays(c) === 1 ? "day" : "days"}` }))
+        : view === "completed"
+          ? cards
+              .filter((c) => c.completed >= total)
+              .sort((a, b) => byTime(b, a, "movedAt", 1))
+              .map((c) => ({ c, detail: `Finished ${fmt(c.movedAt || c.createdAt)}` }))
+          : view === "stalled"
+            ? stats.stalled.map((c) => ({ c, detail: `Session ${Math.min(c.completed + 1, total)} · ${c.days} days` }))
+            : [];
+  const VIEW_LIMIT = 200;
+  const viewTitle: Record<View, string> = {
+    started: "Everyone who started",
+    progress: "In progress",
+    completed: "Completed Pathway",
+    stalled: `Stalled ${days}+ days`,
+  };
+  const tileHref = (v: View) => `/admin/dashboard?view=${v}&days=${days}${wfQuery}#people`;
   const maxWeek = Math.max(1, ...stats.weeks.map((w) => Math.max(w.joined, w.moved)));
 
   return (
@@ -114,11 +151,41 @@ export default async function Dashboard({
           )}
 
           <div className="dash-tiles">
-            <div className="dash-tile"><strong>{stats.started}</strong><span>Started</span></div>
-            <div className="dash-tile"><strong>{stats.inProgress}</strong><span>In progress</span></div>
-            <div className="dash-tile"><strong>{stats.finishedAll}</strong><span>Completed Pathway</span></div>
-            <div className="dash-tile"><strong>{stats.stalled.length}</strong><span>Stalled {days}+ days</span></div>
+            <a className={`dash-tile${view === "started" ? " is-open" : ""}`} href={tileHref("started")} aria-current={view === "started" ? "true" : undefined}>
+              <strong>{stats.started}</strong><span>Started</span>
+            </a>
+            <a className={`dash-tile${view === "progress" ? " is-open" : ""}`} href={tileHref("progress")} aria-current={view === "progress" ? "true" : undefined}>
+              <strong>{stats.inProgress}</strong><span>In progress</span>
+            </a>
+            <a className={`dash-tile${view === "completed" ? " is-open" : ""}`} href={tileHref("completed")} aria-current={view === "completed" ? "true" : undefined}>
+              <strong>{stats.finishedAll}</strong><span>Completed Pathway</span>
+            </a>
+            <a className={`dash-tile${view === "stalled" ? " is-open" : ""}`} href={tileHref("stalled")} aria-current={view === "stalled" ? "true" : undefined}>
+              <strong>{stats.stalled.length}</strong><span>Stalled {days}+ days</span>
+            </a>
           </div>
+          <p className="muted dash-tiles-hint">Click a box to see who is in it.</p>
+
+          {view && (
+            <section id="people" className="session-section dash-view">
+              <div className="dash-view-head">
+                <h2>{viewTitle[view]} ({viewRows.length})</h2>
+                <a className="link-btn" href={`/admin/dashboard?days=${days}${wfQuery}`}>Close</a>
+              </div>
+              {viewRows.length === 0 ? (
+                <p className="muted">No one here right now.</p>
+              ) : (
+                <ul className="chapters">
+                  {viewRows.slice(0, VIEW_LIMIT).map(({ c, detail: d }) => (
+                    <PersonRow key={c.cardId} c={c} detail={d} />
+                  ))}
+                </ul>
+              )}
+              {viewRows.length > VIEW_LIMIT && (
+                <p className="muted">Showing the first {VIEW_LIMIT}. Download the spreadsheet for everyone.</p>
+              )}
+            </section>
+          )}
 
           <h2>Sessions</h2>
           <p className="muted">People who finished each session. Click a session to see who.</p>
