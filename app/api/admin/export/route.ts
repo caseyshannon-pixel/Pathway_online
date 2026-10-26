@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
+import { getStaff } from "@/lib/staff";
 import { rateLimit, tooMany } from "@/lib/security";
 import { getWorkflowSnapshot } from "@/lib/pcoWorkflow";
 
@@ -26,7 +27,11 @@ export async function GET(req: NextRequest) {
     // Same rule as the dashboard: admins' own cards are left out unless ?admins=1.
     const includeAdmins = req.nextUrl.searchParams.get("admins") === "1";
     const adminIds = new Set([...ownerIds(), ...(await getAddedAdmins()).map((a) => a.id)]);
-    const people = includeAdmins ? cards : cards.filter((c) => !adminIds.has(c.personId));
+    const includeStaff = req.nextUrl.searchParams.get("staff") === "1";
+    const staffIds = new Set((await getStaff()).map((s) => s.id));
+    const people = cards.filter(
+      (c) => !((!includeAdmins && adminIds.has(c.personId)) || (!includeStaff && staffIds.has(c.personId))),
+    );
     const rows = [["Name", "Person ID", "Campus workflow", "Sessions finished", "Status", "Joined", "Last moved"]];
     for (const c of people) {
       rows.push([

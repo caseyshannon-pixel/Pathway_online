@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
 import { getWorkflowSnapshot, type CardInfo } from "@/lib/pcoWorkflow";
+import { getStaff } from "@/lib/staff";
 import { buildStats } from "@/lib/dashboard";
 import TopBar from "@/components/TopBar";
 import PersonAvatar from "@/components/PersonAvatar";
@@ -29,7 +30,7 @@ function PersonRow({ c, detail }: { c: CardInfo; detail: string }) {
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string; view?: string }>;
+  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string; staff?: string; view?: string }>;
 }) {
   const session = await getSession();
   if (!(await isAdmin(session))) notFound();
@@ -63,10 +64,21 @@ export default async function Dashboard({
   // Admins' own cards are mostly test runs, so they're left out unless asked for.
   const showAdmins = params.admins === "1";
   const adminIds = new Set([...ownerIds(), ...(await getAddedAdmins()).map((a) => a.id)]);
-  const visible = showAdmins ? snapshot.cards : snapshot.cards.filter((c) => !adminIds.has(c.personId));
-  const hiddenCount = snapshot.cards.length - visible.length;
+  // Staff are hidden the same way, with their own switch.
+  const showStaff = params.staff === "1";
+  const staffIds = new Set((await getStaff()).map((s) => s.id));
+  const visible = snapshot.cards.filter(
+    (c) => !((!showAdmins && adminIds.has(c.personId)) || (!showStaff && staffIds.has(c.personId))),
+  );
+  const hiddenCount = showAdmins ? 0 : snapshot.cards.filter((c) => adminIds.has(c.personId)).length;
+  const hiddenStaff = showStaff
+    ? 0
+    : snapshot.cards.filter((c) => staffIds.has(c.personId) && !adminIds.has(c.personId)).length;
+  const toggleHref = (admins: boolean, staff: boolean) =>
+    `/admin/dashboard?days=${days}${wf ? `&wf=${wf}` : ""}${admins ? "&admins=1" : ""}${staff ? "&staff=1" : ""}`;
+  const exportQuery = [showAdmins && "admins=1", showStaff && "staff=1"].filter(Boolean).join("&");
   const cards = wf ? visible.filter((c) => c.workflowId === wf) : visible;
-  const adminQuery = showAdmins ? "&admins=1" : "";
+  const adminQuery = (showAdmins ? "&admins=1" : "") + (showStaff ? "&staff=1" : "");
   const stats = buildStats(cards, titles, days);
   const wfQuery = (wf ? `&wf=${wf}` : "") + adminQuery;
   // Clicking one of the four boxes at the top lists the people behind that number.
@@ -118,19 +130,29 @@ export default async function Dashboard({
         <div className="card">
           <div className="dash-head">
             <h1>Dashboard</h1>
-            <a className="btn btn-dark" href={`/api/admin/export${showAdmins ? "?admins=1" : ""}`}>Download Spreadsheet</a>
+            <a className="btn btn-dark" href={`/api/admin/export${exportQuery ? `?${exportQuery}` : ""}`}>Download Spreadsheet</a>
           </div>
           <p className="muted">Live from your Pathway workflow in Planning Center. Refreshes every minute.</p>
           <p className="muted">
             {showAdmins ? (
               <>
-                Including admins.{" "}
-                <a href={`/admin/dashboard?days=${days}${wf ? `&wf=${wf}` : ""}`}>Hide admins</a>
+                Including admins. <a href={toggleHref(false, showStaff)}>Hide admins</a>
               </>
             ) : (
               <>
                 Admins are hidden{hiddenCount > 0 ? ` (${hiddenCount} left out)` : ""}.{" "}
-                <a href={`/admin/dashboard?days=${days}${wf ? `&wf=${wf}` : ""}&admins=1`}>Show admins</a>
+                <a href={toggleHref(true, showStaff)}>Show admins</a>
+              </>
+            )}
+            <br />
+            {showStaff ? (
+              <>
+                Including staff. <a href={toggleHref(showAdmins, false)}>Hide staff</a>
+              </>
+            ) : (
+              <>
+                Staff are hidden{hiddenStaff > 0 ? ` (${hiddenStaff} left out)` : ""}.{" "}
+                <a href={toggleHref(showAdmins, true)}>Show staff</a>
               </>
             )}
           </p>
