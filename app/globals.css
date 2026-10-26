@@ -345,7 +345,7 @@ h1, h2 {
 /* Admin dashboard */
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .dash-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0 8px; }
-.dash-tile { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface); }
+.dash-tile { display: block; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface); color: inherit; text-decoration: none; transition: border-color 0.15s; }
 .dash-tile strong { display: block; font-size: 1.8rem; line-height: 1.1; font-family: var(--font-archivo-black), var(--font-archivo), sans-serif; font-weight: 400; }
 .dash-tile span { font-size: 0.85rem; color: var(--muted); }
 .dash-sessions { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
@@ -764,3 +764,12 @@ h1, h2 {
   .waypoint.is-next .chapter-title { flex: 1 1 auto; }
   .waypoint.is-next .chapter-cta { margin-top: 0; }
 }
+
+/* The four dashboard boxes are buttons that list the people behind each number */
+a.dash-tile:hover { border-color: var(--accent); }
+a.dash-tile:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+.dash-tile.is-open { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, white); }
+.dash-tiles-hint { margin: 0 0 14px; font-size: 0.88rem; }
+.dash-view { margin-top: 8px; border-top: 0; padding-top: 0; }
+.dash-view-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dash-view-head h2 { margin: 12px 0 8px; }
