@@ -544,3 +544,38 @@ export async function pcoGetUrl(url: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (await res.json()) as any;
 }
+
+export type LoginPerson = { id: string; name: string; firstName: string; avatar: string };
+
+/** Everyone in People who has exactly this email address (for the email sign-in). */
+export async function findPeopleByEmail(email: string): Promise<LoginPerson[]> {
+  const want = email.trim().toLowerCase();
+  if (!want) return [];
+  const url = (param: string) =>
+    `/people?where[${param}]=${encodeURIComponent(want)}&include=emails&per_page=25`;
+  let json;
+  try {
+    json = await pco(url("search_name_or_email"));
+  } catch {
+    json = await pco(url("search_name_or_email_or_phone_number"));
+  }
+  const emailsById = new Map<string, string>();
+  for (const r of (json?.included ?? []) as Resource[]) {
+    if (r.type === "Email") emailsById.set(r.id, String(r.attributes?.address ?? "").toLowerCase());
+  }
+  const out: LoginPerson[] = [];
+  for (const p of (json?.data ?? []) as (Resource & { relationships?: Record<string, Rel> })[]) {
+    const d = p.relationships?.emails?.data;
+    const ids = (Array.isArray(d) ? d : d ? [d] : []).map((e) => e.id);
+    if (!ids.some((id) => emailsById.get(id) === want)) continue;
+    const a = p.attributes ?? {};
+    const avatar = typeof a.avatar === "string" ? a.avatar : "";
+    out.push({
+      id: p.id,
+      name: String(a.name ?? ""),
+      firstName: String(a.first_name ?? a.name ?? ""),
+      avatar: avatar.startsWith("https://") ? avatar : "",
+    });
+  }
+  return out;
+}

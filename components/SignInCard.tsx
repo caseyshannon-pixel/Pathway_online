@@ -7,11 +7,14 @@ export default function SignInCard({
   signInHref,
   message,
   note,
+  action,
 }: {
   content: SignInContent;
   signInHref: string;
   message?: string | null;
   note?: string | null;
+  /** Replaces the sign-in button (the real page puts the email sign-in here). */
+  action?: React.ReactNode;
 }) {
   return (
     <div className="signin-card">
@@ -36,9 +39,16 @@ export default function SignInCard({
         )}
         {note && <p className="muted">{note}</p>}
         {message && <p className="notice" role="alert">{message}</p>}
-        <a className="btn signin-btn" href={signInHref}>
-          {content.buttonLabel}
-        </a>
+        {action ?? (
+          <a className="btn signin-btn" href={signInHref}>
+            {content.buttonLabel}
+          </a>
+        )}
+        {action && (
+          <p className="signin-help">
+            Church staff and admins: <a href={signInHref}>{content.buttonLabel}</a>
+          </p>
+        )}
         {content.helpText && <p className="signin-help">{content.helpText}</p>}
         <p className="signin-help">
           Trouble signing in? <a href={helpHref({ path: "/" })}>Email us</a>

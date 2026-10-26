@@ -9,6 +9,7 @@ export type Session = {
   name: string;
   firstName: string;
   avatar?: string; // PCO photo URL; missing on sessions created before this was added
+  via?: "email"; // signed in with an emailed code (not a Planning Center login)
 };
 
 export function key() {
@@ -48,6 +49,7 @@ export async function getSession(): Promise<Session | null> {
       name: String(payload.name),
       firstName: String(payload.firstName),
       avatar: payload.avatar ? String(payload.avatar) : "",
+      via: payload.via === "email" ? "email" : undefined,
     };
   } catch {
     return null;
