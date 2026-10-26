@@ -31,7 +31,13 @@ export async function POST(req: NextRequest) {
     if (result.people.length > 1) return go("step=who");
 
     const person = result.people[0];
-    await createSession({ ...person, via: "email" });
+    await createSession({
+      personId: person.id,
+      name: person.name,
+      firstName: person.firstName,
+      avatar: person.avatar,
+      via: "email",
+    });
     await finishLogin(id);
     jar.delete(LOGIN_COOKIE);
   } catch (err) {

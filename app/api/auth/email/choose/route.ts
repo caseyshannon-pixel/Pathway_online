@@ -19,7 +19,13 @@ export async function POST(req: NextRequest) {
     const people = await verifiedPeople(id);
     const person = people?.find((p) => p.id === personId);
     if (!person) return NextResponse.redirect(new URL("/?error=expired", origin), 303);
-    await createSession({ ...person, via: "email" });
+    await createSession({
+      personId: person.id,
+      name: person.name,
+      firstName: person.firstName,
+      avatar: person.avatar,
+      via: "email",
+    });
     await finishLogin(id);
   } catch (err) {
     console.error("Email sign-in failed:", err);
