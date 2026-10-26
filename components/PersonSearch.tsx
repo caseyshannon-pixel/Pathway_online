@@ -21,10 +21,12 @@ type Person = {
 };
 
 type Props = {
-  mode: "advance" | "admin";
+  mode: "advance" | "admin" | "staff";
   initialQuery: string;
   /** admin mode: ids that are already admins */
   adminIds?: string[];
+  /** staff mode: ids already marked as staff */
+  staffIds?: string[];
   /** a person to mark as just changed ("Moved forward" / "Admin added") */
   highlightId?: string;
   /** What to say next to the highlighted person (default: "Moved forward" / "Admin added"). */
@@ -35,6 +37,7 @@ export default function PersonSearch({
   mode,
   initialQuery,
   adminIds = [],
+  staffIds = [],
   highlightId,
   highlightLabel,
 }: Props) {
@@ -133,7 +136,7 @@ export default function PersonSearch({
                   )}
                   {highlightId === p.id && (
                     <span className="status-done">
-                      {highlightLabel ?? (mode === "advance" ? "Moved forward" : "Admin added")}
+                      {highlightLabel ?? (mode === "advance" ? "Moved forward" : mode === "staff" ? "Marked as staff" : "Admin added")}
                     </span>
                   )}
                 </div>
@@ -163,6 +166,17 @@ export default function PersonSearch({
                     </button>
                   )}
                 </div>
+              ) : mode === "staff" ? (
+                staffIds.includes(p.id) ? (
+                  <span className="status status-done">Already staff</span>
+                ) : (
+                  <form action="/api/admin/staff" method="post">
+                    <input type="hidden" name="action" value="add" />
+                    <input type="hidden" name="personId" value={p.id} />
+                    <input type="hidden" name="q" value={query} />
+                    <button className="btn btn-dark" type="submit">Mark as staff</button>
+                  </form>
+                )
               ) : adminIds.includes(p.id) ? (
                 <span className="status status-done">Already an admin</span>
               ) : (
