@@ -96,6 +96,8 @@ export async function saveAddedAdmins(list: AdminEntry[]) {
 
 export async function isAdmin(session: Session | null): Promise<boolean> {
   if (!session) return false;
+  // Admin access needs a real Planning Center login, not just an emailed code.
+  if (session.via === "email") return false;
   if (ownerIds().includes(session.personId)) return true;
   return (await getAddedAdmins()).some((a) => a.id === session.personId);
 }
