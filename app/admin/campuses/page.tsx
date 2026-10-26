@@ -33,7 +33,8 @@ export default async function AdminCampuses({
           <h1>Campus workflows</h1>
           <p className="muted">
             New people start in the workflow for their Primary Campus in Planning Center. People with no
-            Primary Campus go to the Online campus's workflow. Campuses without a workflow use the original
+            Primary Campus choose a campus in the app first (when an admin moves someone who hasn't chosen,
+            they go to the Online campus's workflow). Campuses without a workflow use the original
             Pathway workflow. Anyone who already has a card stays where they are.
           </p>
 

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getSessions } from "@/lib/content";
-import { getProgress, type Progress } from "@/lib/pcoWorkflow";
+import { CampusRequiredError, getProgress, type Progress } from "@/lib/pcoWorkflow";
 import { helpHref } from "@/lib/help";
 import HelpLink from "@/components/HelpLink";
 import TopBar from "@/components/TopBar";
@@ -21,8 +21,9 @@ export default async function Course() {
 
   let progress: Progress | null = null;
   try {
-    progress = await getProgress(session.personId);
+    progress = await getProgress(session.personId, { askCampus: true });
   } catch (err) {
+    if (err instanceof CampusRequiredError) redirect("/choose-campus");
     console.error("Could not load progress:", err);
   }
 
