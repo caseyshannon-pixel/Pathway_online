@@ -39,6 +39,13 @@ export default function SignInCard({
         <a className="btn signin-btn" href={signInHref}>
           {content.buttonLabel}
         </a>
+        <p className="signin-help">
+          New to Planning Center?{" "}
+          <a href="https://accounts.planningcenteronline.com/sign_up" target="_blank" rel="noopener noreferrer">
+            Create a Planning Center account
+          </a>
+          , then come back here and sign in.
+        </p>
         {content.helpText && <p className="signin-help">{content.helpText}</p>}
         <p className="signin-help">
           Trouble signing in? <a href={helpHref({ path: "/" })}>Email us</a>
