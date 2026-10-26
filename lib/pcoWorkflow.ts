@@ -6,7 +6,7 @@
 // tells us how many sessions they have finished.
 
 import { getSessions } from "./content";
-import { getCampusMap } from "./campusConfig";
+import { getCampusChoice, getCampusMap } from "./campusConfig";
 
 const API = process.env.PCO_API_BASE ?? "https://api.planningcenteronline.com/people/v2";
 
@@ -135,6 +135,13 @@ async function findCard(personId: string): Promise<Card | null> {
   return cards[0] ?? null;
 }
 
+/** Thrown when a new person has no campus yet and must choose one before starting. */
+export class CampusRequiredError extends Error {
+  constructor() {
+    super("CAMPUS_REQUIRED");
+  }
+}
+
 /** The campus named "Online" (or with "online" in its name): where people with no Primary Campus go. */
 export async function getOnlineCampus(): Promise<Campus | null> {
   try {
@@ -147,11 +154,13 @@ export async function getOnlineCampus(): Promise<Campus | null> {
 
 /**
  * The workflow a new person should start in: their Primary Campus in Planning
- * Center. Someone with no Primary Campus goes to the Online campus's workflow.
- * A campus with no workflow of its own (or no Online campus) uses the original
- * workflow. Nothing changes until at least one campus has its own workflow.
+ * Center, else the campus they chose in the app. With `askCampus`, a person with
+ * neither gets a CampusRequiredError so they can be asked. Otherwise (admin
+ * actions) they go to the Online campus's workflow. A campus with no workflow of
+ * its own (or no Online campus) uses the original workflow. Nothing changes until
+ * at least one campus has its own workflow.
  */
-async function workflowForPerson(personId: string): Promise<string> {
+async function workflowForPerson(personId: string, askCampus = false): Promise<string> {
   const map = await getCampusMap();
   if (Object.keys(map).length === 0) return defaultWorkflowId();
 
@@ -162,7 +171,11 @@ async function workflowForPerson(personId: string): Promise<string> {
   } catch (err) {
     console.error("Could not read primary campus:", err);
   }
-  if (!campusId) campusId = (await getOnlineCampus())?.id ?? "";
+  if (!campusId) campusId = (await getCampusChoice(personId)) ?? "";
+  if (!campusId) {
+    if (askCampus) throw new CampusRequiredError();
+    campusId = (await getOnlineCampus())?.id ?? "";
+  }
 
   return (campusId && map[campusId]) || defaultWorkflowId();
 }
@@ -200,9 +213,10 @@ export async function getProgress(
   opts: { create: false },
 ): Promise<Omit<Progress, "cardId"> & { cardId: string | null }>;
 export async function getProgress(personId: string, opts: { fresh: true }): Promise<Progress>;
+export async function getProgress(personId: string, opts: { askCampus: true }): Promise<Progress>;
 export async function getProgress(
   personId: string,
-  opts: { create?: boolean; fresh?: boolean } = {},
+  opts: { create?: boolean; fresh?: boolean; askCampus?: boolean } = {},
 ) {
   // Page views reuse a very recent answer, so moving between pages doesn't ask Planning Center again.
   // Anything that is about to change progress passes `fresh: true` to skip this.
@@ -217,7 +231,7 @@ export async function getProgress(
   if (!existing && opts.create === false) {
     return { completed: 0, total, cardId: null };
   }
-  const card = existing ?? (await createCard(personId, await workflowForPerson(personId)));
+  const card = existing ?? (await createCard(personId, await workflowForPerson(personId, opts.askCampus)));
   const stepIds = await getStepIds(workflowOf(card) || defaultWorkflowId());
 
   const result = { completed: completedFrom(card, stepIds, total), total, cardId: card.id };
