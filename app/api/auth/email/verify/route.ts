@@ -1,50 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { appOrigin } from "@/lib/pco";
-import { checkCode, finishLogin, LOGIN_COOKIE } from "@/lib/emailLogin";
-import { createSession } from "@/lib/session";
-import { safeNext } from "@/lib/nextPath";
+import { afterVerified, checkCode, EMAIL_COOKIE, looksLikeEmail, normalizeEmail, rememberEmail } from "@/lib/emailLogin";
 import { clientIp, forbidden, rateLimit, sameOrigin } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
+// Every failure goes back to the code screen with a message, never to the start.
 export async function POST(req: NextRequest) {
   if (!sameOrigin(req)) return forbidden();
   const origin = appOrigin(req.nextUrl.origin);
-  const go = (query: string) => NextResponse.redirect(new URL(`/?${query}`, origin), 303);
+  const go = (path: string) => NextResponse.redirect(new URL(path, origin), 303);
+  const retry = (error: string) => go(`/?step=code&error=${error}`);
 
+  const form = await req.formData();
   const jar = await cookies();
-  const id = jar.get(LOGIN_COOKIE)?.value ?? "";
-  const code = String((await req.formData()).get("code") ?? "").replace(/\s/g, "");
-  if (!id || !/^\d{6}$/.test(code)) return go("step=code&error=code");
-  if (!rateLimit(`email-verify-ip:${clientIp(req)}`, 30, 10 * 60_000)) return go("step=code&error=slow");
+  // The code form carries the email, so this works in a new tab or app too.
+  const email = normalizeEmail(String(form.get("email") ?? "") || (jar.get(EMAIL_COOKIE)?.value ?? ""));
+  const code = String(form.get("code") ?? "").replace(/\s/g, "");
+  if (!looksLikeEmail(email)) return retry("needemail");
+  await rememberEmail(email);
+  if (!/^\d{6}$/.test(code)) return retry("code");
+  if (!rateLimit(`email-verify-ip:${clientIp(req)}`, 30, 10 * 60_000)) return retry("slow");
 
   try {
-    const result = await checkCode(id, code);
-    if (!result.ok) {
-      if (result.reason === "expired") {
-        jar.delete(LOGIN_COOKIE);
-        return go("error=expired");
-      }
-      return go(`step=code&error=${result.reason}`);
-    }
-    if (result.people.length > 1) return go("step=who");
-
-    const person = result.people[0];
-    await createSession({
-      personId: person.id,
-      name: person.name,
-      firstName: person.firstName,
-      avatar: person.avatar,
-      via: "email",
-    });
-    await finishLogin(id);
-    jar.delete(LOGIN_COOKIE);
+    const result = await checkCode(email, code);
+    if (!result.ok) return retry(result.reason);
+    return go(await afterVerified(result.people));
   } catch (err) {
     console.error("Email sign-in failed:", err);
-    return go("step=code&error=send");
+    return retry("signin");
   }
-  const next = safeNext(jar.get("pathway_next")?.value) ?? "/course";
-  jar.delete("pathway_next");
-  return NextResponse.redirect(new URL(next, origin), 303);
 }
