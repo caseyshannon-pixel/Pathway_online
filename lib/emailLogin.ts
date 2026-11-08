@@ -5,11 +5,15 @@
 // wrong guesses and then locks.
 
 import { createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
+import { SignJWT, jwtVerify } from "jose";
 import { readSecure, writeSecure } from "./blobStore";
 import { findPeopleByEmail, type LoginPerson } from "./pcoWorkflow";
 import { sendMail } from "./mail";
+import { key as sessionKey } from "./session";
 
 export const LOGIN_COOKIE = "pathway_login";
+/** After a correct code for a shared email: the people to choose from (signed, 10 minutes). */
+export const PICK_COOKIE = "pathway_pick";
 const TTL_MS = 10 * 60_000;
 const MAX_TRIES = 5;
 
@@ -92,11 +96,40 @@ export async function checkCode(id: string, code: string): Promise<CodeResult> {
   return { ok: true, people: c.people };
 }
 
-/** After a correct code: the people this email can sign in as (the list is only given once verified). */
-export async function verifiedPeople(id: string): Promise<LoginPerson[] | null> {
-  const c = await load(id);
-  if (!c || !c.verified || c.used || c.exp < Date.now()) return null;
-  return c.people;
+// ---- Shared emails: "Who is signing in?" --------------------------------------
+// The list travels in a signed cookie set by the code check. It is never re-read from
+// storage: the Blob store serves reads through a CDN cache that can return the copy
+// from before the code was checked for up to a minute, which used to drop people back
+// at the email screen right after a correct code.
+
+const PICK_AUDIENCE = "pathway-pick";
+export const PICK_MAX_AGE = TTL_MS / 1000;
+
+export async function signPick(people: LoginPerson[]): Promise<string> {
+  return new SignJWT({ people })
+    .setProtectedHeader({ alg: "HS256" })
+    .setAudience(PICK_AUDIENCE)
+    .setIssuedAt()
+    .setExpirationTime(`${PICK_MAX_AGE}s`)
+    .sign(sessionKey());
+}
+
+/** The people from a signed pick cookie, or null if it is missing, expired or altered. */
+export async function readPick(token: string | undefined): Promise<LoginPerson[] | null> {
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, sessionKey(), { algorithms: ["HS256"], audience: PICK_AUDIENCE });
+    const people = payload.people;
+    if (!Array.isArray(people) || people.length === 0) return null;
+    return people.map((p) => ({
+      id: String(p.id),
+      name: String(p.name),
+      firstName: String(p.firstName),
+      avatar: typeof p.avatar === "string" ? p.avatar : "",
+    }));
+  } catch {
+    return null;
+  }
 }
 
 /** Marks the challenge as spent so a code can't be used twice. */
