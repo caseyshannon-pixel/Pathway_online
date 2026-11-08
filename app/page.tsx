@@ -5,7 +5,7 @@ import { getSignIn } from "@/lib/signin";
 import SignInCard from "@/components/SignInCard";
 import EmailSignIn from "@/components/EmailSignIn";
 import { cookies } from "next/headers";
-import { LOGIN_COOKIE, verifiedPeople } from "@/lib/emailLogin";
+import { PICK_COOKIE, readPick } from "@/lib/emailLogin";
 
 const MESSAGES: Record<string, string> = {
   denied: "Sign-in was cancelled. You can try again whenever you're ready.",
@@ -17,6 +17,7 @@ const MESSAGES: Record<string, string> = {
   bad: "That code isn't right. Please check it and try again.",
   locked: "Too many wrong codes. Please start again to get a new one.",
   expired: "That code expired. Please start again to get a new one.",
+  nologin: "We couldn't find your sign-in on this browser. Please enter your email here to get a new code.",
   signin: "We couldn't finish signing you in with Planning Center. Please try again.",
 };
 
@@ -32,15 +33,15 @@ export default async function Home({
   if (session) redirect(back ?? "/course");
 
   const content = await getSignIn();
-  const message = error ? MESSAGES[error] ?? MESSAGES.signin : null;
+  let message = error ? MESSAGES[error] ?? MESSAGES.signin : null;
   const signInHref = back ? `/api/auth/login?next=${encodeURIComponent(back)}` : "/api/auth/login";
 
   let stage: "email" | "code" | "who" = step === "code" ? "code" : "email";
-  let people: Awaited<ReturnType<typeof verifiedPeople>> = null;
+  let people: Awaited<ReturnType<typeof readPick>> = null;
   if (step === "who") {
-    const id = (await cookies()).get(LOGIN_COOKIE)?.value ?? "";
-    people = await verifiedPeople(id).catch(() => null);
+    people = await readPick((await cookies()).get(PICK_COOKIE)?.value);
     if (people && people.length > 0) stage = "who";
+    else message = MESSAGES.expired; // never drop back to the email box without saying why
   }
 
   return (
