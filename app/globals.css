@@ -779,4 +779,5 @@ a.dash-tile:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 
 .signin-form label { font-weight: 600; }
 .signin-form input { font: inherit; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; width: 100%; box-sizing: border-box; }
 .signin-form input[name="code"] { font-size: 1.6rem; letter-spacing: 0.3em; text-align: center; }
+.signin-resend { margin-top: 12px; }
 .signin-form .signin-help { text-align: center; }
