@@ -17,11 +17,11 @@ export async function POST(req: NextRequest) {
     const person = people?.find((p) => p.id === personId);
     if (!person) {
       console.warn("Email sign-in failed (choose): the list expired or didn't include that person");
-      return go("/?step=code&error=expired");
+      return go("/?step=sent&error=expired");
     }
     return go(await signInAs(person));
   } catch (err) {
     console.error("Email sign-in failed:", err);
-    return go("/?step=code&error=signin");
+    return go("/?step=sent&error=signin");
   }
 }
