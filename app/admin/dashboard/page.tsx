@@ -37,7 +37,7 @@ function PersonRow({ c, detail, back, isHidden }: { c: CardInfo; detail: string;
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string; staff?: string; hidden?: string; view?: string }>;
+  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string; staff?: string; hidden?: string; just?: string; view?: string }>;
 }) {
   const session = await getSession();
   if (!(await isAdmin(session))) notFound();
@@ -76,7 +76,10 @@ export default async function Dashboard({
   const staffIds = new Set((await getStaff()).map((s) => s.id));
   // People an admin hid with the Hide link: also left out unless asked for.
   const showHidden = params.hidden === "1";
-  const hiddenIds = new Set((await getHidden()).map((h) => h.id));
+  const hiddenIds = new Set((await getHidden({ fresh: true }).catch(() => getHidden())).map((h) => h.id));
+  // What was just hidden or unhidden counts immediately, even if storage hasn't caught up.
+  const just = /^(hide|show):(\d+)$/.exec(params.just ?? "");
+  if (just) (just[1] === "hide" ? hiddenIds.add(just[2]) : hiddenIds.delete(just[2]));
   const isOut = (id: string) =>
     (!showAdmins && adminIds.has(id)) || (!showStaff && staffIds.has(id)) || (!showHidden && hiddenIds.has(id));
   const visible = snapshot.cards.filter((c) => !isOut(c.personId));
@@ -101,7 +104,7 @@ export default async function Dashboard({
   const picked = Number(params.session);
   const detail = !view && Number.isInteger(picked) && picked >= 1 && picked <= total ? picked : null;
   const hereParams = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v) hereParams.set(k, v);
+  for (const [k, v] of Object.entries(params)) if (k !== "just" && typeof v === "string" && v) hereParams.set(k, v);
   const back = `/admin/dashboard?${hereParams.toString()}${view || detail ? "#people" : ""}`;
 
   const DAY = 86_400_000;

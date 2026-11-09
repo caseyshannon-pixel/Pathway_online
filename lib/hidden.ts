@@ -22,15 +22,22 @@ function clean(data: unknown): HiddenEntry[] {
   return out;
 }
 
-export async function getHidden(): Promise<HiddenEntry[]> {
+/**
+ * The hidden list. Each server keeps its own short memory of it, so another server can
+ * hold an older copy for up to 30 seconds. Anything that changes the list, and the
+ * dashboard itself, asks for `fresh` so a click shows up right away. A fresh read that
+ * fails throws, so a failed read can never be saved back as an empty list.
+ */
+export async function getHidden(opts: { fresh?: boolean } = {}): Promise<HiddenEntry[]> {
   if (!storageConfigured() && !privateStorageConfigured()) return [];
-  if (cache && Date.now() - cache.at < CACHE_MS) return cache.list;
+  if (!opts.fresh && cache && Date.now() - cache.at < CACHE_MS) return cache.list;
   try {
     const list = clean(await readSecure(PATH));
     cache = { at: Date.now(), list };
     return list;
   } catch (err) {
     console.error("Could not load the hidden list:", err);
+    if (opts.fresh) throw err;
     return [];
   }
 }
