@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
 import { getWorkflowSnapshot, type CardInfo } from "@/lib/pcoWorkflow";
 import { getStaff } from "@/lib/staff";
+import { getHidden } from "@/lib/hidden";
 import { buildStats } from "@/lib/dashboard";
 import TopBar from "@/components/TopBar";
 import PersonAvatar from "@/components/PersonAvatar";
@@ -16,13 +17,19 @@ const fmt = (iso: string) =>
     ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
     : "";
 
-function PersonRow({ c, detail }: { c: CardInfo; detail: string }) {
+function PersonRow({ c, detail, back, isHidden }: { c: CardInfo; detail: string; back: string; isHidden: boolean }) {
   return (
     <li className="chapter">
       <PersonAvatar name={c.name} src={c.avatar} />
       <span className="chapter-title">{c.name}</span>
       <span className="status">{detail}</span>
       <a className="link-btn" href={`/admin?q=${encodeURIComponent(c.name)}`}>Move forward</a>
+      <form action="/api/admin/hidden" method="post">
+        <input type="hidden" name="action" value={isHidden ? "show" : "hide"} />
+        <input type="hidden" name="personId" value={c.personId} />
+        <input type="hidden" name="returnTo" value={back} />
+        <button type="submit" className="link-btn">{isHidden ? "Unhide" : "Hide"}</button>
+      </form>
     </li>
   );
 }
@@ -30,7 +37,7 @@ function PersonRow({ c, detail }: { c: CardInfo; detail: string }) {
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string; staff?: string; view?: string }>;
+  searchParams: Promise<{ days?: string; session?: string; wf?: string; admins?: string; staff?: string; hidden?: string; view?: string }>;
 }) {
   const session = await getSession();
   if (!(await isAdmin(session))) notFound();
@@ -67,18 +74,24 @@ export default async function Dashboard({
   // Staff are hidden the same way, with their own switch.
   const showStaff = params.staff === "1";
   const staffIds = new Set((await getStaff()).map((s) => s.id));
-  const visible = snapshot.cards.filter(
-    (c) => !((!showAdmins && adminIds.has(c.personId)) || (!showStaff && staffIds.has(c.personId))),
-  );
+  // People an admin hid with the Hide link: also left out unless asked for.
+  const showHidden = params.hidden === "1";
+  const hiddenIds = new Set((await getHidden()).map((h) => h.id));
+  const isOut = (id: string) =>
+    (!showAdmins && adminIds.has(id)) || (!showStaff && staffIds.has(id)) || (!showHidden && hiddenIds.has(id));
+  const visible = snapshot.cards.filter((c) => !isOut(c.personId));
   const hiddenCount = showAdmins ? 0 : snapshot.cards.filter((c) => adminIds.has(c.personId)).length;
   const hiddenStaff = showStaff
     ? 0
     : snapshot.cards.filter((c) => staffIds.has(c.personId) && !adminIds.has(c.personId)).length;
-  const toggleHref = (admins: boolean, staff: boolean) =>
-    `/admin/dashboard?days=${days}${wf ? `&wf=${wf}` : ""}${admins ? "&admins=1" : ""}${staff ? "&staff=1" : ""}`;
-  const exportQuery = [showAdmins && "admins=1", showStaff && "staff=1"].filter(Boolean).join("&");
+  const hiddenPeople = showHidden
+    ? 0
+    : snapshot.cards.filter((c) => hiddenIds.has(c.personId) && !adminIds.has(c.personId) && !staffIds.has(c.personId)).length;
+  const toggleHref = (admins: boolean, staff: boolean, hidden: boolean) =>
+    `/admin/dashboard?days=${days}${wf ? `&wf=${wf}` : ""}${admins ? "&admins=1" : ""}${staff ? "&staff=1" : ""}${hidden ? "&hidden=1" : ""}`;
+  const exportQuery = [showAdmins && "admins=1", showStaff && "staff=1", showHidden && "hidden=1"].filter(Boolean).join("&");
   const cards = wf ? visible.filter((c) => c.workflowId === wf) : visible;
-  const adminQuery = (showAdmins ? "&admins=1" : "") + (showStaff ? "&staff=1" : "");
+  const adminQuery = (showAdmins ? "&admins=1" : "") + (showStaff ? "&staff=1" : "") + (showHidden ? "&hidden=1" : "");
   const stats = buildStats(cards, titles, days);
   const wfQuery = (wf ? `&wf=${wf}` : "") + adminQuery;
   // Clicking one of the four boxes at the top lists the people behind that number.
@@ -87,6 +100,9 @@ export default async function Dashboard({
   const view: View | null = VIEWS.find((v) => v === params.view) ?? null;
   const picked = Number(params.session);
   const detail = !view && Number.isInteger(picked) && picked >= 1 && picked <= total ? picked : null;
+  const hereParams = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v) hereParams.set(k, v);
+  const back = `/admin/dashboard?${hereParams.toString()}${view || detail ? "#people" : ""}`;
 
   const DAY = 86_400_000;
   const now = Date.now();
@@ -136,23 +152,36 @@ export default async function Dashboard({
           <p className="muted">
             {showAdmins ? (
               <>
-                Including admins. <a href={toggleHref(false, showStaff)}>Hide admins</a>
+                Including admins. <a href={toggleHref(false, showStaff, showHidden)}>Hide admins</a>
               </>
             ) : (
               <>
                 Admins are hidden{hiddenCount > 0 ? ` (${hiddenCount} left out)` : ""}.{" "}
-                <a href={toggleHref(true, showStaff)}>Show admins</a>
+                <a href={toggleHref(true, showStaff, showHidden)}>Show admins</a>
               </>
             )}
             <br />
             {showStaff ? (
               <>
-                Including staff. <a href={toggleHref(showAdmins, false)}>Hide staff</a>
+                Including staff. <a href={toggleHref(showAdmins, false, showHidden)}>Hide staff</a>
               </>
             ) : (
               <>
                 Staff are hidden{hiddenStaff > 0 ? ` (${hiddenStaff} left out)` : ""}.{" "}
-                <a href={toggleHref(showAdmins, true)}>Show staff</a>
+                <a href={toggleHref(showAdmins, true, showHidden)}>Show staff</a>
+              </>
+            )}
+            <br />
+            {showHidden ? (
+              <>
+                Showing hidden people. <a href={toggleHref(showAdmins, showStaff, false)}>Hide them again</a>
+              </>
+            ) : (
+              <>
+                {hiddenPeople > 0
+                  ? `People you hid are left out (${hiddenPeople}). `
+                  : "Use Hide on a person's row to leave them out. "}
+                {hiddenPeople > 0 && <a href={toggleHref(showAdmins, showStaff, true)}>Show hidden</a>}
               </>
             )}
           </p>
@@ -199,7 +228,7 @@ export default async function Dashboard({
               ) : (
                 <ul className="chapters">
                   {viewRows.slice(0, VIEW_LIMIT).map(({ c, detail: d }) => (
-                    <PersonRow key={c.cardId} c={c} detail={d} />
+                    <PersonRow back={back} isHidden={hiddenIds.has(c.personId)} key={c.cardId} c={c} detail={d} />
                   ))}
                 </ul>
               )}
@@ -241,7 +270,7 @@ export default async function Dashboard({
                   .filter((c) => c.completed >= detail)
                   .slice(0, 100)
                   .map((c) => (
-                    <PersonRow key={c.cardId} c={c} detail={`${c.completed} of ${total} done`} />
+                    <PersonRow back={back} isHidden={hiddenIds.has(c.personId)} key={c.cardId} c={c} detail={`${c.completed} of ${total} done`} />
                   ))}
               </ul>
               <h3>On it now ({stats.sessions[detail - 1].onNow})</h3>
@@ -250,7 +279,7 @@ export default async function Dashboard({
                   .filter((c) => c.completed === detail - 1)
                   .slice(0, 100)
                   .map((c) => (
-                    <PersonRow key={c.cardId} c={c} detail={c.movedAt ? `since ${fmt(c.movedAt)}` : ""} />
+                    <PersonRow back={back} isHidden={hiddenIds.has(c.personId)} key={c.cardId} c={c} detail={c.movedAt ? `since ${fmt(c.movedAt)}` : ""} />
                   ))}
               </ul>
             </section>
@@ -298,6 +327,8 @@ export default async function Dashboard({
             <ul className="chapters">
               {stats.stalled.slice(0, 50).map((c) => (
                 <PersonRow
+                  back={back}
+                  isHidden={hiddenIds.has(c.personId)}
                   key={c.cardId}
                   c={c}
                   detail={`Session ${Math.min(c.completed + 1, total)} · ${c.days} days`}
