@@ -3,14 +3,17 @@ import { cookies } from "next/headers";
 import { appOrigin, exchangeCode, fetchMe } from "@/lib/pco";
 import { createSession } from "@/lib/session";
 import { safeNext } from "@/lib/nextPath";
+import { recordFailure, type FailureReason } from "@/lib/loginFailures";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const origin = appOrigin(req.nextUrl.origin);
   const params = req.nextUrl.searchParams;
-  const fail = (reason: string) =>
-    NextResponse.redirect(new URL(`/?error=${reason}`, origin));
+  const fail = async (reason: string) => {
+    await recordFailure(`pco_${reason === "signin" ? "failed" : reason}` as FailureReason);
+    return NextResponse.redirect(new URL(`/?error=${reason}`, origin));
+  };
 
   if (params.get("error")) return fail("denied");
 

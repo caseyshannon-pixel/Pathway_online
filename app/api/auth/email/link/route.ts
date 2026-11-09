@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appOrigin } from "@/lib/pco";
 import { afterVerified, checkLink } from "@/lib/emailLogin";
+import { recordFailure } from "@/lib/loginFailures";
 import { clientIp, forbidden, rateLimit, sameOrigin } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +20,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await checkLink(k, t);
-    if (!result.ok) return go("/?step=email&error=link");
+    if (!result.ok) {
+      await recordFailure("link_expired");
+      return go("/?step=email&error=link");
+    }
     return go(await afterVerified(result.people));
   } catch (err) {
     console.error("Email sign-in link failed:", err);
+    await recordFailure("link_error");
     return go("/?step=email&error=link");
   }
 }

@@ -4,6 +4,7 @@ import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
 import { getWorkflowSnapshot, type CardInfo } from "@/lib/pcoWorkflow";
 import { getStaff } from "@/lib/staff";
 import { getHidden } from "@/lib/hidden";
+import { FAILURE_LABELS, getFailures } from "@/lib/loginFailures";
 import { buildStats } from "@/lib/dashboard";
 import TopBar from "@/components/TopBar";
 import PersonAvatar from "@/components/PersonAvatar";
@@ -11,6 +12,7 @@ import PersonAvatar from "@/components/PersonAvatar";
 export const dynamic = "force-dynamic";
 
 const STALL_CHOICES = [7, 14, 30];
+const DAY_MS = 86_400_000;
 
 const fmt = (iso: string) =>
   iso
@@ -95,6 +97,10 @@ export default async function Dashboard({
   const exportQuery = [showAdmins && "admins=1", showStaff && "staff=1", showHidden && "hidden=1"].filter(Boolean).join("&");
   const cards = wf ? visible.filter((c) => c.workflowId === wf) : visible;
   const adminQuery = (showAdmins ? "&admins=1" : "") + (showStaff ? "&staff=1" : "") + (showHidden ? "&hidden=1" : "");
+  const weekAgo = Date.now() - 7 * DAY_MS;
+  const failures = (await getFailures()).filter((f) => Date.parse(f.at) > weekAgo).reverse();
+  const failureCounts = new Map<string, number>();
+  for (const f of failures) failureCounts.set(f.reason, (failureCounts.get(f.reason) ?? 0) + 1);
   const stats = buildStats(cards, titles, days);
   const wfQuery = (wf ? `&wf=${wf}` : "") + adminQuery;
   // Clicking one of the four boxes at the top lists the people behind that number.
@@ -341,6 +347,45 @@ export default async function Dashboard({
           )}
           {stats.stalled.length > 50 && (
             <p className="muted">Showing the 50 longest. Download the spreadsheet for everyone.</p>
+          )}
+
+          <h2 id="signin-problems">Sign-in problems, last 7 days ({failures.length})</h2>
+          {failures.length === 0 ? (
+            <p className="muted">None. Nobody has had trouble signing in this week.</p>
+          ) : (
+            <>
+              <ul className="chapters">
+                {[...failureCounts.entries()]
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([reason, n]) => {
+                    const info = FAILURE_LABELS[reason as keyof typeof FAILURE_LABELS];
+                    return (
+                      <li key={reason} className="chapter">
+                        <span className="chapter-title">
+                          {info.label}
+                          <small className="chapter-hint">{info.hint}</small>
+                        </span>
+                        <span className="status">{n}</span>
+                      </li>
+                    );
+                  })}
+              </ul>
+              <h3>Most recent</h3>
+              <ul className="chapters">
+                {failures.slice(0, 25).map((f, i) => (
+                  <li key={f.at + i} className="chapter">
+                    <span className="chapter-title">
+                      {FAILURE_LABELS[f.reason].label}
+                      {f.email && <small className="chapter-hint">{f.email}</small>}
+                    </span>
+                    <span className="status">
+                      {new Date(f.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="muted">Email addresses are shown partly hidden. Times are Eastern. The log keeps the last 30 days.</p>
+            </>
           )}
         </div>
       </main>

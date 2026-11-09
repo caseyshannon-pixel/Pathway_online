@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { appOrigin } from "@/lib/pco";
 import { PICK_COOKIE, readPick, signInAs } from "@/lib/emailLogin";
+import { recordFailure } from "@/lib/loginFailures";
 import { forbidden, sameOrigin } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
     const person = people?.find((p) => p.id === personId);
     if (!person) {
       console.warn("Email sign-in failed (choose): the list expired or didn't include that person");
+      await recordFailure("pick_expired");
       return go("/?step=sent&error=expired");
     }
     return go(await signInAs(person));
