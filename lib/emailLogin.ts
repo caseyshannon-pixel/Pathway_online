@@ -1,13 +1,12 @@
-// Server-only. One-time email codes (and sign-in links) for signing in without a
-// Planning Center login.
+// Server-only. One-time email sign-in links for signing in without a Planning Center login.
 //
 // Pending sign-ins are saved per email address, not per browser tab, so someone can
 // leave to check their email, come back in another tab or app, and still finish.
-// The file name is an HMAC of the email, and the codes are never stored: only HMACs
-// of them, keyed with SESSION_SECRET. Up to three recent codes stay valid, so asking
-// twice doesn't break the first email.
+// The file name is an HMAC of the email, and the link tokens are never stored: only
+// HMACs of them, keyed with SESSION_SECRET. Up to three recent links stay valid, so
+// asking twice doesn't break the first email.
 
-import { createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { readSecure, writeSecure } from "./blobStore";
 import { findPeopleByEmail, type LoginPerson } from "./pcoWorkflow";
@@ -16,19 +15,18 @@ import { cookies } from "next/headers";
 import { createSession, key as sessionKey } from "./session";
 import { safeNext } from "./nextPath";
 
-/** The email a code was last sent to, so the code screen still knows it after a reload. */
+/** The email a link was last sent to, so the "check your email" screen still knows it after a reload. */
 export const EMAIL_COOKIE = "pathway_login_email";
-/** After a correct code for a shared email: the people to choose from (signed, short-lived). */
+/** After a valid link for a shared email: the people to choose from (signed, short-lived). */
 export const PICK_COOKIE = "pathway_pick";
 
-const TTL_MS = 10 * 60_000;
-const MAX_TRIES = 6;
-const KEEP_CODES = 3;
+const TTL_MS = 30 * 60_000;
+const KEEP_LINKS = 3;
 
-type Code = { hash: string; link: string; exp: number };
-type Pending = { codes: Code[]; tries: number; people: LoginPerson[] };
+type Link = { link: string; exp: number };
+type Pending = { codes: Link[]; people: LoginPerson[] };
 
-export type FailReason = "bad" | "expired" | "locked";
+export type FailReason = "expired";
 export type LoginResult = { ok: true; people: LoginPerson[] } | { ok: false; reason: FailReason };
 
 const secret = () => process.env.SESSION_SECRET ?? "";
@@ -60,12 +58,11 @@ async function load(k: string): Promise<Pending | null> {
 const save = (k: string, p: Pending) => writeSecure(pathFor(k), p);
 
 /** Logs why a sign-in try failed, without the email, so support can trace reports. */
-function logFail(where: "code" | "link", reason: FailReason, p: Pending | null) {
+function logFail(reason: FailReason, p: Pending | null) {
   const newest = p?.codes.reduce((m, c) => Math.max(m, c.exp), 0) ?? 0;
-  console.warn(`Email sign-in failed (${where}): ${reason}`, {
-    liveCodes: live(p).length,
-    tries: p?.tries ?? 0,
-    secondsSinceNewestCode: newest ? Math.round((Date.now() - (newest - TTL_MS)) / 1000) : null,
+  console.warn(`Email sign-in link failed: ${reason}`, {
+    liveLinks: live(p).length,
+    secondsSinceNewestLink: newest ? Math.round((Date.now() - (newest - TTL_MS)) / 1000) : null,
   });
 }
 
@@ -81,61 +78,41 @@ export async function startLogin(email: string, origin: string): Promise<{ sent:
   }
 
   const k = emailKey(email);
-  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const token = randomBytes(24).toString("hex");
-  const previous = live(await load(k).catch(() => null)).slice(-(KEEP_CODES - 1));
+  const previous = live(await load(k).catch(() => null)).slice(-(KEEP_LINKS - 1));
   await save(k, {
-    codes: [...previous, { hash: hmac(`${k}:code:${code}`), link: hmac(`${k}:link:${token}`), exp: Date.now() + TTL_MS }],
-    tries: 0,
+    codes: [...previous, { link: hmac(`${k}:link:${token}`), exp: Date.now() + TTL_MS }],
     people,
   });
 
   const link = `${origin}/signin/link?k=${k}&t=${token}`;
   const sent = await sendMail(
     email,
-    "Your Pathway Online sign-in code",
-    `Your Pathway Online sign-in code is ${code}\n\n` +
-      `Or tap this link to sign in:\n${link}\n\n` +
-      `Both work for 10 minutes. If you didn't ask for this, you can ignore this email.\n\nThe Rock`,
+    "Your Pathway Online sign-in link",
+    `Tap this link to sign in to Pathway Online:\n${link}\n\n` +
+      `It works for 30 minutes. If you didn't ask for this, you can ignore this email.\n\nThe Rock`,
   );
   return { sent };
 }
 
-/** Checks a typed code against the email's pending sign-in. A match uses it up. */
-export async function checkCode(email: string, code: string): Promise<LoginResult> {
-  const k = emailKey(email);
-  const p = await load(k);
-  const codes = live(p);
-  if (!p || codes.length === 0 || p.people.length === 0) return fail("code", "expired", p);
-  if (p.tries >= MAX_TRIES) return fail("code", "locked", p);
-
-  const hash = hmac(`${k}:code:${code.trim()}`);
-  if (!codes.some((c) => same(c.hash, hash))) {
-    p.tries += 1;
-    await save(k, p);
-    return fail("code", p.tries >= MAX_TRIES ? "locked" : "bad", p);
-  }
-  return finish(k, p);
-}
-
 /** Checks a sign-in link from the email. A match uses it up. */
 export async function checkLink(k: string, token: string): Promise<LoginResult> {
-  if (!validKey(k) || !validLinkToken(token)) return fail("link", "expired", null);
+  if (!validKey(k) || !validLinkToken(token)) return fail("expired", null);
   const p = await load(k);
   const codes = live(p);
-  if (!p || codes.length === 0 || p.people.length === 0) return fail("link", "expired", p);
+  if (!p || codes.length === 0 || p.people.length === 0) return fail("expired", p);
   const hash = hmac(`${k}:link:${token}`);
-  if (!codes.some((c) => same(c.link, hash))) return fail("link", "expired", p);
+  if (!codes.some((c) => same(c.link, hash))) return fail("expired", p);
   return finish(k, p);
 }
 
-function fail(where: "code" | "link", reason: FailReason, p: Pending | null): LoginResult {
-  logFail(where, reason, p);
+function fail(reason: FailReason, p: Pending | null): LoginResult {
+  logFail(reason, p);
   return { ok: false, reason };
 }
 
 async function finish(k: string, p: Pending): Promise<LoginResult> {
-  await save(k, { codes: [], tries: 0, people: [] });
+  await save(k, { codes: [], people: [] });
   return { ok: true, people: p.people };
 }
 
@@ -181,9 +158,9 @@ const shortCookie = (maxAge: number) => ({
   maxAge,
 });
 
-/** Remembers which email a code went to, for the code screen (20 minutes). */
+/** Remembers which email a link went to, for the "check your email" screen (30 minutes). */
 export async function rememberEmail(email: string) {
-  (await cookies()).set(EMAIL_COOKIE, email, shortCookie(1200));
+  (await cookies()).set(EMAIL_COOKIE, email, shortCookie(1800));
 }
 
 /** Signs in as one person and returns where to go next. */
@@ -204,7 +181,7 @@ export async function signInAs(person: LoginPerson): Promise<string> {
 }
 
 /**
- * After a correct code or link: signs in right away for one person, or keeps the
+ * After a valid link: signs in right away for one person, or keeps the
  * list for a shared email and returns the "Who is signing in?" screen.
  */
 export async function afterVerified(people: LoginPerson[]): Promise<string> {

@@ -1,6 +1,6 @@
 import type { LoginPerson } from "@/lib/pcoWorkflow";
 
-// The email-code sign-in steps shown inside the sign-in card.
+// The email-link sign-in steps shown inside the sign-in card.
 export default function EmailSignIn({
   step,
   next,
@@ -8,10 +8,10 @@ export default function EmailSignIn({
   email = "",
   justSent = false,
 }: {
-  step: "email" | "code" | "who";
+  step: "email" | "sent" | "who";
   next?: string | null;
   people?: LoginPerson[];
-  /** The email a code was sent to, when this browser knows it. */
+  /** The email a link was sent to, when this browser knows it. */
   email?: string;
   justSent?: boolean;
 }) {
@@ -31,39 +31,31 @@ export default function EmailSignIn({
     );
   }
 
-  if (step === "code") {
+  if (step === "sent") {
     return (
-      <div>
-        <form action="/api/auth/email/verify" method="post" className="signin-form">
+      <div className="signin-form">
+        <p className="signin-intro">
           {email ? (
             <>
-              <input type="hidden" name="email" value={email} />
-              <p className="signin-help">
-                {justSent ? "We sent a code to " : "Your code went to "}
-                <strong>{email}</strong>. <a href="/?step=email">Use a different email</a>
-              </p>
+              {justSent ? "We sent a sign-in link to " : "Your sign-in link went to "}
+              <strong>{email}</strong>.
             </>
           ) : (
-            <>
-              <label htmlFor="email">Your email address</label>
-              <input id="email" name="email" type="email" autoComplete="email" maxLength={200} required placeholder="you@example.com" />
-            </>
+            "Check your email for your sign-in link."
           )}
-          <label htmlFor="code">Enter the 6-digit code we emailed you</label>
-          <input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={8} required autoFocus={Boolean(email)} />
-          <button className="btn signin-btn" type="submit">Sign In</button>
-          <p className="signin-help">
-            You can switch to your email app and come back. The code works for 10 minutes, or tap the
-            link in the email instead. Didn't get it? Check your spam folder.
-          </p>
-        </form>
+        </p>
+        <p className="signin-help">
+          Open the email and tap the link. You can switch to your email app and it will sign you in there.
+          The link works for 30 minutes. Didn't get it? Check your spam folder.
+        </p>
         {email && (
           <form action="/api/auth/email/send" method="post" className="signin-form signin-resend">
             <input type="hidden" name="email" value={email} />
             {next && <input type="hidden" name="next" value={next} />}
-            <button className="btn btn-secondary signin-btn" type="submit">Send a New Code</button>
+            <button className="btn btn-secondary signin-btn" type="submit">Send a New Link</button>
           </form>
         )}
+        <p className="signin-help"><a href="/?step=email">Use a different email</a></p>
       </div>
     );
   }
@@ -73,10 +65,9 @@ export default function EmailSignIn({
       {next && <input type="hidden" name="next" value={next} />}
       <label htmlFor="email">Your email address</label>
       <input id="email" name="email" type="email" autoComplete="email" maxLength={200} required placeholder="you@example.com" />
-      <button className="btn signin-btn" type="submit">Email Me a Code</button>
+      <button className="btn signin-btn" type="submit">Email Me a Sign-In Link</button>
       <p className="signin-help">
-        Use the email you gave The Rock. We'll send you a 6-digit code. No password needed.{" "}
-        <a href="/?step=code">Already have a code?</a>
+        Use the email you gave The Rock. We'll email you a link that signs you in. No password needed.
       </p>
     </form>
   );

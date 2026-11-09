@@ -13,11 +13,7 @@ const MESSAGES: Record<string, string> = {
   email: "That doesn't look like an email address. Please check it and try again.",
   slow: "Too many tries. Please wait a few minutes and try again.",
   send: "We couldn't send that right now. Please try again in a moment.",
-  code: "Please enter the 6-digit code from the email.",
-  needemail: "Please enter your email address along with the code.",
-  bad: "That code isn't right. Please check it and try again. Any code from the last 10 minutes works.",
-  locked: "Too many wrong codes. Tap Send a New Code below to get a fresh one.",
-  expired: "That code has expired. Tap Send a New Code below to get a fresh one.",
+  expired: "That took too long. Please send yourself a new sign-in link.",
   link: "That sign-in link has expired or was already used. Enter your email to get a new one.",
   signin: "We couldn't finish signing you in with Planning Center. Please try again.",
 };
@@ -37,20 +33,20 @@ export default async function Home({
   let message = error ? MESSAGES[error] ?? MESSAGES.signin : null;
   const signInHref = back ? `/api/auth/login?next=${encodeURIComponent(back)}` : "/api/auth/login";
 
-  // Someone with a code on the way goes straight back to the code box, even if they
+  // Someone with a link on the way goes straight back to the "check your email" screen, even if they
   // reopened the link or reloaded, unless they asked to use a different email.
   const jar = await cookies();
   const savedEmail = jar.get(EMAIL_COOKIE)?.value ?? "";
   const email = looksLikeEmail(savedEmail) ? savedEmail : "";
-  let stage: "email" | "code" | "who" = step === "code" || (email && step !== "email") ? "code" : "email";
+  let stage: "email" | "sent" | "who" = step === "sent" || (email && step !== "email") ? "sent" : "email";
   let people: Awaited<ReturnType<typeof readPick>> = null;
   if (step === "who") {
     people = await readPick(jar.get(PICK_COOKIE)?.value);
     if (people) {
       stage = "who";
     } else {
-      // The list timed out: say so and keep the code box up instead of starting over.
-      stage = "code";
+      // The list timed out: say so instead of starting over silently.
+      stage = email ? "sent" : "email";
       message = MESSAGES.expired;
     }
   }

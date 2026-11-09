@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
 
   if (!looksLikeEmail(email)) return back(`step=email&error=email${nextQuery}`);
   if (!rateLimit(`email-send-ip:${clientIp(req)}`, 10, 10 * 60_000) || !rateLimit(`email-send:${email}`, 3, 10 * 60_000)) {
-    // They may already have a code from a moment ago, so keep the code box up.
+    // They may already have a link from a moment ago, so keep the "check your email" screen up.
     await rememberEmail(email);
-    return back(`step=code&error=slow${nextQuery}`);
+    return back(`step=sent&error=slow${nextQuery}`);
   }
 
   try {
@@ -34,12 +34,12 @@ export async function POST(req: NextRequest) {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 1200,
+        maxAge: 1800,
       });
     }
   } catch (err) {
     console.error("Could not start email sign-in:", err);
     return back(`step=email&error=send${nextQuery}`);
   }
-  return back(`step=code&sent=1${nextQuery}`);
+  return back(`step=sent&sent=1${nextQuery}`);
 }
