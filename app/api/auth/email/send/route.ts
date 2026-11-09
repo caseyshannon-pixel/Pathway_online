@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { appOrigin } from "@/lib/pco";
-import { LOGIN_COOKIE, looksLikeEmail, normalizeEmail, startLogin } from "@/lib/emailLogin";
+import { looksLikeEmail, normalizeEmail, rememberEmail, startLogin } from "@/lib/emailLogin";
 import { safeNext } from "@/lib/nextPath";
 import { clientIp, forbidden, rateLimit, sameOrigin } from "@/lib/security";
 
@@ -17,34 +17,29 @@ export async function POST(req: NextRequest) {
   const next = safeNext(String(form.get("next") ?? ""));
   const nextQuery = next ? `&next=${encodeURIComponent(next)}` : "";
 
-  if (!looksLikeEmail(email)) return back(`error=email${nextQuery}`);
+  if (!looksLikeEmail(email)) return back(`step=email&error=email${nextQuery}`);
   if (!rateLimit(`email-send-ip:${clientIp(req)}`, 10, 10 * 60_000) || !rateLimit(`email-send:${email}`, 3, 10 * 60_000)) {
-    return back(`error=slow${nextQuery}`);
+    // They may already have a code from a moment ago, so keep the code box up.
+    await rememberEmail(email);
+    return back(`step=code&error=slow${nextQuery}`);
   }
 
   try {
-    const { id, sent } = await startLogin(email);
+    const { sent } = await startLogin(email, origin);
     if (!sent && process.env.NODE_ENV !== "production") console.warn("No sign-in email sent.");
-    const jar = await cookies();
-    jar.set(LOGIN_COOKIE, id, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-      maxAge: 1200,
-    });
+    await rememberEmail(email);
     if (next) {
-      jar.set("pathway_next", next, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
+      (await cookies()).set("pathway_next", next, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
         maxAge: 1200,
       });
     }
   } catch (err) {
     console.error("Could not start email sign-in:", err);
-    return back(`error=send${nextQuery}`);
+    return back(`step=email&error=send${nextQuery}`);
   }
-  return back(`step=code${nextQuery}`);
+  return back(`step=code&sent=1${nextQuery}`);
 }
