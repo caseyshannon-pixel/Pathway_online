@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getAddedAdmins, isAdmin, ownerIds } from "@/lib/admin";
 import { getStaff } from "@/lib/staff";
+import { getHidden } from "@/lib/hidden";
 import { rateLimit, tooMany } from "@/lib/security";
 import { getWorkflowSnapshot } from "@/lib/pcoWorkflow";
 
@@ -29,8 +30,15 @@ export async function GET(req: NextRequest) {
     const adminIds = new Set([...ownerIds(), ...(await getAddedAdmins()).map((a) => a.id)]);
     const includeStaff = req.nextUrl.searchParams.get("staff") === "1";
     const staffIds = new Set((await getStaff()).map((s) => s.id));
+    const includeHidden = req.nextUrl.searchParams.get("hidden") === "1";
+    const hiddenIds = new Set((await getHidden()).map((h) => h.id));
     const people = cards.filter(
-      (c) => !((!includeAdmins && adminIds.has(c.personId)) || (!includeStaff && staffIds.has(c.personId))),
+      (c) =>
+        !(
+          (!includeAdmins && adminIds.has(c.personId)) ||
+          (!includeStaff && staffIds.has(c.personId)) ||
+          (!includeHidden && hiddenIds.has(c.personId))
+        ),
     );
     const rows = [["Name", "Person ID", "Campus workflow", "Sessions finished", "Status", "Joined", "Last moved"]];
     for (const c of people) {
