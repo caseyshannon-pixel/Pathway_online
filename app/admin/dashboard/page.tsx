@@ -92,9 +92,6 @@ export default async function Dashboard({
   const exportQuery = [showAdmins && "admins=1", showStaff && "staff=1", showHidden && "hidden=1"].filter(Boolean).join("&");
   const cards = wf ? visible.filter((c) => c.workflowId === wf) : visible;
   const adminQuery = (showAdmins ? "&admins=1" : "") + (showStaff ? "&staff=1" : "") + (showHidden ? "&hidden=1" : "");
-  const hereParams = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v) hereParams.set(k, v);
-  const back = `/admin/dashboard?${hereParams.toString()}${view || detail ? "#people" : ""}`;
   const stats = buildStats(cards, titles, days);
   const wfQuery = (wf ? `&wf=${wf}` : "") + adminQuery;
   // Clicking one of the four boxes at the top lists the people behind that number.
@@ -103,6 +100,9 @@ export default async function Dashboard({
   const view: View | null = VIEWS.find((v) => v === params.view) ?? null;
   const picked = Number(params.session);
   const detail = !view && Number.isInteger(picked) && picked >= 1 && picked <= total ? picked : null;
+  const hereParams = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (typeof v === "string" && v) hereParams.set(k, v);
+  const back = `/admin/dashboard?${hereParams.toString()}${view || detail ? "#people" : ""}`;
 
   const DAY = 86_400_000;
   const now = Date.now();
