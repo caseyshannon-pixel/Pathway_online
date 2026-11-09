@@ -11,6 +11,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { readSecure, writeSecure } from "./blobStore";
 import { findPeopleByEmail, type LoginPerson } from "./pcoWorkflow";
 import { sendMail } from "./mail";
+import { recordFailure } from "./loginFailures";
 import { cookies } from "next/headers";
 import { createSession, key as sessionKey } from "./session";
 import { safeNext } from "./nextPath";
@@ -74,6 +75,7 @@ export async function startLogin(email: string, origin: string): Promise<{ sent:
   const people = await findPeopleByEmail(email);
   if (people.length === 0) {
     console.info("Email sign-in: no People profile has that email; nothing sent.");
+    await recordFailure("no_profile", email);
     return { sent: false };
   }
 
@@ -92,6 +94,7 @@ export async function startLogin(email: string, origin: string): Promise<{ sent:
     `Tap this link to sign in to Pathway Online:\n${link}\n\n` +
       `It works for 30 minutes. If you didn't ask for this, you can ignore this email.\n\nThe Rock`,
   );
+  if (!sent) await recordFailure("send_failed", email);
   return { sent };
 }
 

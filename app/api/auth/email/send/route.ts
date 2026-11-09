@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { appOrigin } from "@/lib/pco";
 import { looksLikeEmail, normalizeEmail, rememberEmail, startLogin } from "@/lib/emailLogin";
 import { safeNext } from "@/lib/nextPath";
+import { recordFailure } from "@/lib/loginFailures";
 import { clientIp, forbidden, rateLimit, sameOrigin } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
   if (!looksLikeEmail(email)) return back(`step=email&error=email${nextQuery}`);
   if (!rateLimit(`email-send-ip:${clientIp(req)}`, 10, 10 * 60_000) || !rateLimit(`email-send:${email}`, 3, 10 * 60_000)) {
     // They may already have a link from a moment ago, so keep the "check your email" screen up.
+    await recordFailure("rate_limited", email);
     await rememberEmail(email);
     return back(`step=sent&error=slow${nextQuery}`);
   }
@@ -39,6 +41,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("Could not start email sign-in:", err);
+    await recordFailure("send_error", email);
     return back(`step=email&error=send${nextQuery}`);
   }
   return back(`step=sent&sent=1${nextQuery}`);

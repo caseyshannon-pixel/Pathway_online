@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const includeStaff = req.nextUrl.searchParams.get("staff") === "1";
     const staffIds = new Set((await getStaff()).map((s) => s.id));
     const includeHidden = req.nextUrl.searchParams.get("hidden") === "1";
-    const hiddenIds = new Set((await getHidden()).map((h) => h.id));
+    const hiddenIds = new Set((await getHidden({ fresh: true }).catch(() => getHidden())).map((h) => h.id));
     const people = cards.filter(
       (c) =>
         !(

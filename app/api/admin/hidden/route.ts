@@ -26,8 +26,9 @@ export async function POST(req: NextRequest) {
   }
   const back = new URL(DASHBOARD.test(returnTo) ? returnTo : "/admin/dashboard", appOrigin(req.nextUrl.origin));
 
+  let ok = true;
   try {
-    const current = await getHidden();
+    const current = await getHidden({ fresh: true });
     if (action === "hide") {
       if (!current.some((h) => h.id === personId)) {
         const name = await getPersonName(personId).catch(() => "");
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("Hidden list update failed:", err);
+    ok = false;
   }
+  // Tell the dashboard what just changed, so it shows even if storage is a moment behind.
+  if (ok) back.searchParams.set("just", `${action}:${personId}`);
   return NextResponse.redirect(back, 303);
 }
