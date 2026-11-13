@@ -117,22 +117,70 @@ type Card = {
 
 const workflowOf = (card: Card) => card.relationships?.workflow?.data?.id ?? "";
 
+// Two cards created this close together for one person are an accident: two page
+// loads both found no card and both added one.
+const DUPLICATE_WINDOW_MS = 10 * 60_000;
+
 /**
  * The person's active card in any Pathway workflow. An existing card always wins,
- * so someone who changes campus keeps their progress. If they somehow have more
- * than one, the most recently moved is used.
+ * so someone who changes campus keeps their progress. If they have more than one,
+ * the one with the most progress is used (then the oldest), and any accidental
+ * duplicate that never got past Session 1 is removed.
  */
 async function findCard(personId: string): Promise<Card | null> {
-  const [json, wids] = await Promise.all([
+  const [json, wids, sessions] = await Promise.all([
     pco(`/people/${personId}/workflow_cards?include=current_step&per_page=100`),
     allWorkflowIds(),
+    getSessions(),
   ]);
   const allowed = new Set(wids);
-  const stamp = (c: Card) => Date.parse(c.attributes.moved_to_step_at ?? c.attributes.created_at ?? "") || 0;
-  const cards = ((json?.data ?? []) as Card[])
-    .filter((c) => !c.attributes.removed_at && allowed.has(workflowOf(c)))
-    .sort((a, b) => stamp(b) - stamp(a));
-  return cards[0] ?? null;
+  const active = ((json?.data ?? []) as Card[]).filter(
+    (c) => !c.attributes.removed_at && allowed.has(workflowOf(c)),
+  );
+  if (active.length <= 1) return active[0] ?? null;
+
+  const created = (c: Card) => Date.parse(c.attributes.created_at ?? "") || 0;
+  const ranked = await Promise.all(
+    active.map(async (card) => ({
+      card,
+      done: completedFrom(card, await getStepIds(workflowOf(card)), sessions.length),
+    })),
+  );
+  ranked.sort((a, b) => b.done - a.done || created(a.card) - created(b.card) || Number(a.card.id) - Number(b.card.id));
+  const [best, ...rest] = ranked;
+  for (const extra of rest) {
+    const accidental =
+      extra.done === 0 &&
+      !extra.card.attributes.completed_at &&
+      Math.abs(created(extra.card) - created(best.card)) <= DUPLICATE_WINDOW_MS;
+    if (!accidental) continue;
+    try {
+      await pco(`/people/${personId}/workflow_cards/${extra.card.id}/remove`, { method: "POST", body: JSON.stringify({}) });
+      snapshotCache = null;
+      console.warn(`Removed duplicate Pathway card ${extra.card.id} for person ${personId} (kept ${best.card.id}).`);
+    } catch (err) {
+      console.error("Could not remove a duplicate Pathway card:", err);
+    }
+  }
+  return best.card;
+}
+
+// Card creation in progress on this server, so two page loads at once share one card.
+const creating = new Map<string, Promise<Card>>();
+
+/**
+ * Adds the person to their Pathway workflow, once. Another server could add a card
+ * at the same moment, so it looks again afterwards and keeps just one.
+ */
+function createCardOnce(personId: string, askCampus?: boolean): Promise<Card> {
+  const running = creating.get(personId);
+  if (running) return running;
+  const job = (async () => {
+    const card = await createCard(personId, await workflowForPerson(personId, askCampus));
+    return (await findCard(personId).catch(() => null)) ?? card;
+  })().finally(() => creating.delete(personId));
+  creating.set(personId, job);
+  return job;
 }
 
 /** Thrown when a new person has no campus yet and must choose one before starting. */
@@ -231,7 +279,7 @@ export async function getProgress(
   if (!existing && opts.create === false) {
     return { completed: 0, total, cardId: null };
   }
-  const card = existing ?? (await createCard(personId, await workflowForPerson(personId, opts.askCampus)));
+  const card = existing ?? (await createCardOnce(personId, opts.askCampus));
   const stepIds = await getStepIds(workflowOf(card) || defaultWorkflowId());
 
   const result = { completed: completedFrom(card, stepIds, total), total, cardId: card.id };

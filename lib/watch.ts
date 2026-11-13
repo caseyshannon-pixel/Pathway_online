@@ -11,8 +11,10 @@ import { SignJWT, jwtVerify } from "jose";
 import { key } from "./session";
 
 const COOKIE = "pathway_watch";
-const MAX_CREDIT_SECONDS = 20; // most time one beat can add
-const MAX_GAP_MS = 45_000; // a longer gap means paused or closed: nothing credited
+// Browsers slow timers in background tabs to about once a minute, so a beat can arrive
+// up to ~60 seconds late. Credit is still only the real time that passed.
+const MAX_CREDIT_SECONDS = 70; // most time one beat can add
+const MAX_GAP_MS = 75_000; // a longer gap means paused or closed: nothing credited
 const REQUIRED_FRACTION = 0.85; // same bar the player uses
 const MIN_REQUIRED_SECONDS = 60; // floor when the video's length isn't known
 const ADMIN_FRACTION = 0.1; // admins only need this much

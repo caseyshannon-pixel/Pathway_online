@@ -5,6 +5,7 @@ import { getWorkflowSnapshot, type CardInfo } from "@/lib/pcoWorkflow";
 import { getStaff } from "@/lib/staff";
 import { getHidden } from "@/lib/hidden";
 import { FAILURE_LABELS, getFailures } from "@/lib/loginFailures";
+import { getSessionProblems } from "@/lib/sessionProblems";
 import { buildStats } from "@/lib/dashboard";
 import TopBar from "@/components/TopBar";
 import PersonAvatar from "@/components/PersonAvatar";
@@ -101,6 +102,25 @@ export default async function Dashboard({
   const failures = (await getFailures()).filter((f) => Date.parse(f.at) > weekAgo).reverse();
   const failureCounts = new Map<string, number>();
   for (const f of failures) failureCounts.set(f.reason, (failureCounts.get(f.reason) ?? 0) + 1);
+  // Possible duplicates: one person with more than one card, or two profiles with the same name.
+  const cardsByPerson = new Map<string, CardInfo[]>();
+  for (const c of cards) cardsByPerson.set(c.personId, [...(cardsByPerson.get(c.personId) ?? []), c]);
+  const profilesByName = new Map<string, Map<string, CardInfo>>();
+  for (const c of cards) {
+    const key = c.name.trim().toLowerCase();
+    if (!key || key === "(unknown)") continue;
+    const profiles = profilesByName.get(key) ?? new Map<string, CardInfo>();
+    if (!profiles.has(c.personId)) profiles.set(c.personId, c);
+    profilesByName.set(key, profiles);
+  }
+  const multiCard = [...cardsByPerson.values()].filter((list) => list.length > 1);
+  const sameName = [...profilesByName.values()].filter((m) => m.size > 1).map((m) => [...m.values()]);
+  const campusLabel = new Map(workflows.map((w) => [w.id, w.label]));
+  const where = (c: CardInfo) =>
+    `${c.completed >= total ? "Completed" : `Session ${c.completed + 1}`} (${campusLabel.get(c.workflowId) ?? "workflow"})`;
+  const pcoProfile = (id: string) => `https://people.planningcenteronline.com/people/AC${id}`;
+  const sessionProblems = (await getSessionProblems()).filter((p) => Date.parse(p.at) > weekAgo).reverse();
+  const mins = (sec: number) => `${Math.max(1, Math.round(sec / 60))} min`;
   const stats = buildStats(cards, titles, days);
   const wfQuery = (wf ? `&wf=${wf}` : "") + adminQuery;
   // Clicking one of the four boxes at the top lists the people behind that number.
@@ -385,6 +405,78 @@ export default async function Dashboard({
                 ))}
               </ul>
               <p className="muted">Email addresses are shown partly hidden. Times are Eastern. The log keeps the last 30 days.</p>
+            </>
+          )}
+
+          <h2 id="duplicates">Possible duplicates ({multiCard.length + sameName.length})</h2>
+          {multiCard.length + sameName.length === 0 ? (
+            <p className="muted">None found.</p>
+          ) : (
+            <>
+              <p className="muted">
+                Progress only moves one card, so a duplicate can look stuck while the person is further along.
+                Check these in Planning Center and remove or merge the extra one.
+              </p>
+              <ul className="chapters">
+                {multiCard.slice(0, 50).map((list) => (
+                  <li key={`p${list[0].personId}`} className="chapter">
+                    <PersonAvatar name={list[0].name} src={list[0].avatar} />
+                    <span className="chapter-title">
+                      {list[0].name}
+                      <small className="chapter-hint">{list.length} cards: {list.map(where).join(", ")}</small>
+                    </span>
+                    <a className="link-btn" href={pcoProfile(list[0].personId)} target="_blank" rel="noopener noreferrer">Open in Planning Center</a>
+                  </li>
+                ))}
+                {sameName.slice(0, 50).map((list) => (
+                  <li key={`n${list[0].personId}`} className="chapter">
+                    <PersonAvatar name={list[0].name} src={list[0].avatar} />
+                    <span className="chapter-title">
+                      {list[0].name}
+                      <small className="chapter-hint">
+                        {list.length} profiles with this name: {list.map(where).join(", ")}. Could be two people, or one person twice.
+                      </small>
+                    </span>
+                    <span className="status">
+                      {list.map((c, i) => (
+                        <a key={c.personId} href={pcoProfile(c.personId)} target="_blank" rel="noopener noreferrer">
+                          {i > 0 ? " · " : ""}Profile {i + 1}
+                        </a>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          <h2 id="session-problems">Session problems, last 7 days ({sessionProblems.length})</h2>
+          {sessionProblems.length === 0 ? (
+            <p className="muted">None. Every finished video was saved this week.</p>
+          ) : (
+            <>
+              <p className="muted">
+                Videos someone reached the end of that didn't count. &quot;Not enough watch time&quot; usually means they
+                skipped ahead, or watched part on another device.
+              </p>
+              <ul className="chapters">
+                {sessionProblems.slice(0, 25).map((p, i) => (
+                  <li key={p.at + i} className="chapter">
+                    <span className="chapter-title">
+                      {p.name || `Person ${p.personId}`}
+                      <small className="chapter-hint">
+                        Session {p.session} ·{" "}
+                        {p.reason === "not_watched"
+                          ? `not enough watch time (${mins(p.watched)} of ${mins(p.required)} needed)`
+                          : "couldn't save to Planning Center"}
+                      </small>
+                    </span>
+                    <span className="status">
+                      {new Date(p.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </>
           )}
         </div>
