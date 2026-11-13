@@ -104,9 +104,10 @@ export default async function Dashboard({
   for (const f of failures) failureCounts.set(f.reason, (failureCounts.get(f.reason) ?? 0) + 1);
   // Possible duplicates: one person with more than one card, or two profiles with the same name.
   const cardsByPerson = new Map<string, CardInfo[]>();
-  for (const c of cards) cardsByPerson.set(c.personId, [...(cardsByPerson.get(c.personId) ?? []), c]);
+  // Across every campus workflow, so a duplicate in another campus still shows when filtering.
+  for (const c of visible) cardsByPerson.set(c.personId, [...(cardsByPerson.get(c.personId) ?? []), c]);
   const profilesByName = new Map<string, Map<string, CardInfo>>();
-  for (const c of cards) {
+  for (const c of visible) {
     const key = c.name.trim().toLowerCase();
     if (!key || key === "(unknown)") continue;
     const profiles = profilesByName.get(key) ?? new Map<string, CardInfo>();
