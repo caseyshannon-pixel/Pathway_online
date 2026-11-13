@@ -5,6 +5,7 @@ import { forbidden, rateLimit, sameOrigin, tooMany } from "@/lib/security";
 import { hasWatchedEnough } from "@/lib/watch";
 import { isAdmin } from "@/lib/admin";
 import { completeSession } from "@/lib/pcoWorkflow";
+import { recordSessionProblem } from "@/lib/sessionProblems";
 
 export const dynamic = "force-dynamic";
 
@@ -33,13 +34,31 @@ export async function POST(req: NextRequest) {
     sessions[number - 1].lengthSeconds,
     await isAdmin(session),
   );
-  if (!watch.ok) return NextResponse.json({ error: "not_watched" }, { status: 400 });
+  if (!watch.ok) {
+    await recordSessionProblem({
+      reason: "not_watched",
+      personId: session.personId,
+      name: session.name,
+      session: number,
+      watched: watch.watched,
+      required: watch.required,
+    });
+    return NextResponse.json({ error: "not_watched" }, { status: 400 });
+  }
 
   try {
     const progress = await completeSession(session.personId, number);
     return NextResponse.json({ completed: progress.completed });
   } catch (err) {
     console.error("Could not save progress:", err);
+    await recordSessionProblem({
+      reason: "save_failed",
+      personId: session.personId,
+      name: session.name,
+      session: number,
+      watched: watch.watched,
+      required: watch.required,
+    });
     return NextResponse.json({ error: "Could not save progress" }, { status: 500 });
   }
 }

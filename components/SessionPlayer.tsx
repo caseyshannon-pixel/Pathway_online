@@ -24,7 +24,7 @@ type Props = {
   thumbnailUrl?: string;
   /** Shown in the completion banner (what happens next). */
   afterText?: string;
-  /** Admins: show a button to finish once 10% has been watched. */
+  /** Admins: the finish button shows after 10% has been watched (85% for everyone else). */
   adminShortcut?: boolean;
   /** A mailto: link shown under real errors ("Still stuck? Email us"). */
   helpHref?: string;
@@ -76,7 +76,8 @@ export default function SessionPlayer({
   const [tone, setTone] = useState<"info" | "error">("error");
   const [problem, setProblem] = useState<"none" | "retry" | "signin">("none");
   const finishRef = useRef<() => void>(undefined);
-  const [adminReady, setAdminReady] = useState(false);
+  // Enough has been watched to finish, so the Mark Session Complete button shows.
+  const [ready, setReady] = useState(false);
   // With a thumbnail, YouTube's player only loads once someone presses play.
   const [started, setStarted] = useState(!thumbnailUrl);
 
@@ -86,9 +87,23 @@ export default function SessionPlayer({
     let timer: ReturnType<typeof setInterval> | null = null;
     let beatTimer: ReturnType<typeof setInterval> | null = null;
     let watched = 0;
+    let lastTick = 0;
     let cancelled = false;
 
+    // Counts playing time from the clock, not from timer ticks: browsers slow timers in
+    // background tabs, and counting ticks made people look like they had skipped.
+    const tick = () => {
+      if (!lastTick) return;
+      const now = Date.now();
+      watched += Math.min((now - lastTick) / 1000, 75) * Math.min(player?.getPlaybackRate?.() ?? 1, 2);
+      lastTick = now;
+      const length = player?.getDuration?.() ?? 0;
+      if (length > 0 && watched >= length * (adminShortcut ? ADMIN_FRACTION : REQUIRED_FRACTION)) setReady(true);
+    };
+
     const stopTimer = () => {
+      tick();
+      lastTick = 0;
       if (timer) clearInterval(timer);
       if (beatTimer) clearInterval(beatTimer);
       timer = null;
@@ -117,12 +132,7 @@ export default function SessionPlayer({
         return;
       }
       await sendBeat();
-      const duration = player?.getDuration?.() ?? 0;
-      if (duration > 0 && watched < duration * (adminShortcut ? ADMIN_FRACTION : REQUIRED_FRACTION)) {
-        setTone("info");
-        setMessage(SKIPPED_MESSAGE);
-        return;
-      }
+      // The server decides whether enough was watched (and logs it when not).
       if (alreadyCompleted) {
         setDone(true);
         return;
@@ -173,11 +183,8 @@ export default function SessionPlayer({
             const S = YT.PlayerState;
             if (e.data === S.PLAYING) {
               stopTimer();
-              timer = setInterval(() => {
-                watched += player?.getPlaybackRate?.() ?? 1;
-                const length = player?.getDuration?.() ?? 0;
-                if (adminShortcut && length > 0 && watched >= length * ADMIN_FRACTION) setAdminReady(true);
-              }, 1000);
+              lastTick = Date.now();
+              timer = setInterval(tick, 1000);
               void sendBeat();
               beatTimer = setInterval(() => void sendBeat(), 10_000);
             } else if (e.data === S.ENDED) {
@@ -222,13 +229,15 @@ export default function SessionPlayer({
           </button>
         )}
       </div>
-      {adminShortcut && adminReady && !done && (
+      {ready && !done && (
         <div className="admin-shortcut">
-          <button type="button" className="btn btn-secondary" onClick={() => finishRef.current?.()}>
-            Admin: Mark Session Complete
+          <button type="button" className={adminShortcut ? "btn btn-secondary" : "btn"} onClick={() => finishRef.current?.()}>
+            {adminShortcut ? "Admin: Mark Session Complete" : "Mark Session Complete"}
           </button>
           <small className="muted">
-            Admins can move on after 10% of the video. This counts as a real completion.
+            {adminShortcut
+              ? "Admins can move on after 10% of the video. This counts as a real completion."
+              : "You've watched enough of this video to finish this session."}
           </small>
         </div>
       )}
@@ -246,7 +255,7 @@ export default function SessionPlayer({
         </button>
       )}
       {problem === "signin" && (
-        <a className="btn" href={`/api/auth/login?next=${encodeURIComponent(`/course/${session}`)}`}>
+        <a className="btn" href={`/?next=${encodeURIComponent(`/course/${session}`)}`}>
           Sign In Again
         </a>
       )}
